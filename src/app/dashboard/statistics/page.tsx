@@ -5,15 +5,19 @@ import {
   ArrowLeft,
   Share2,
   BarChart as BarChartIcon,
-  Calendar,
+  Calendar as CalendarIcon,
   ShieldCheck,
   AlertTriangle,
   TrendingUp,
   ArrowUp,
-  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   BarChart,
@@ -26,6 +30,8 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Calendar } from '@/components/ui/calendar';
+import { format, addMonths, subMonths } from 'date-fns';
 
 const deviceComparisonData = [
   { name: 'Kitchen', value: 42, color: 'hsl(var(--chart-1))' },
@@ -110,7 +116,59 @@ function LegendItem({ color, label, value }: { color: string, label: string, val
     )
 }
 
+function MonthlySummaryCard({ icon: Icon, iconColor, title, value, footer }: { icon: React.ElementType, iconColor: string, title: string, value: string, footer: string }) {
+    return (
+        <Card className="flex-1">
+            <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                    <Icon className={cn("h-5 w-5", iconColor)} />
+                </div>
+                <p className="text-2xl font-bold">{value}</p>
+                <p className="text-xs text-muted-foreground">{footer}</p>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function StatisticsPage() {
+    const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9, 1)); // October 2025
+
+    const dailyGasData: Record<string, number> = {
+        '2025-10-01': 25, '2025-10-02': 35, '2025-10-03': 42, '2025-10-04': 38, '2025-10-05': 55,
+        '2025-10-06': 31, '2025-10-07': 33, '2025-10-08': 41, '2025-10-09': 28, '2025-10-10': 60,
+        '2025-10-11': 45, '2025-10-12': 29, '2025-10-13': 48, '2025-10-14': 22, '2025-10-15': 51,
+        '2025-10-16': 49, '2025-10-17': 36, '2025-10-18': 58, '2025-10-19': 40, '2025-10-20': 34,
+        '2025-10-25': 5, '2025-10-26': 5,
+      };
+
+      const getDayStatus = (date: Date) => {
+        const dateString = format(date, 'yyyy-MM-dd');
+        const level = dailyGasData[dateString];
+        if (level === undefined) return 'default';
+        if (level > 50) return 'high';
+        if (level > 30) return 'moderate';
+        return 'safe';
+      };
+
+      const DayWithStatus = ({ date, ...props }: { date: Date } & React.HTMLAttributes<HTMLDivElement>) => {
+        const status = getDayStatus(date);
+        const baseClasses = "w-9 h-9 flex items-center justify-center rounded-full";
+        const statusClasses = {
+          safe: 'bg-green-100 text-green-800',
+          moderate: 'bg-orange-100 text-orange-800',
+          high: 'bg-red-100 text-red-800',
+          default: ''
+        };
+      
+        return (
+          <div {...props}>
+            <div className={cn(baseClasses, statusClasses[status])}>
+              {format(date, 'd')}
+            </div>
+          </div>
+        );
+      };
 
   return (
     <div className="bg-background min-h-screen pb-24">
@@ -134,7 +192,7 @@ export default function StatisticsPage() {
               Analytics
             </TabsTrigger>
             <TabsTrigger value="calendar">
-              <Calendar className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4" />
               Calendar
             </TabsTrigger>
           </TabsList>
@@ -198,10 +256,77 @@ export default function StatisticsPage() {
             </Card>
 
           </TabsContent>
-          <TabsContent value="calendar">
+          <TabsContent value="calendar" className="space-y-4">
             <Card>
-                <CardContent className="p-6">
-                    <p>Calendar view coming soon.</p>
+                <CardHeader>
+                    <CardTitle>Monthly Gas Level Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <h3 className="font-semibold">{format(currentMonth, 'MMMM yyyy')}</h3>
+                        <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <Calendar
+                        month={currentMonth}
+                        onMonthChange={setCurrentMonth}
+                        components={{
+                            Day: ({ date }) => date ? <DayWithStatus date={date} /> : null
+                        }}
+                        className="p-0"
+                        classNames={{
+                            head_cell: "w-9 text-xs font-normal text-muted-foreground",
+                            cell: "w-auto p-0",
+                            day: "w-9 h-9",
+                        }}
+                    />
+                    <div className="flex justify-around items-center mt-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 rounded-full bg-green-200"></span>
+                            <span>Safe (&lt;30)</span>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 rounded-full bg-orange-200"></span>
+                            <span>Moderate (31-50)</span>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 rounded-full bg-red-200"></span>
+                            <span>High (&gt;50)</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Monthly Summary</CardTitle>
+                    <CardDescription>Overview for {format(currentMonth, 'MMMM')}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex gap-4">
+                    <MonthlySummaryCard
+                        icon={CheckCircle2}
+                        iconColor="text-green-500"
+                        title="Safe Days"
+                        value="23"
+                        footer="Below threshold"
+                    />
+                     <MonthlySummaryCard
+                        icon={AlertCircle}
+                        iconColor="text-yellow-500"
+                        title="Warning Days"
+                        value="5"
+                        footer="Moderate levels"
+                    />
+                     <MonthlySummaryCard
+                        icon={Flame}
+                        iconColor="text-red-500"
+                        title="Danger Days"
+                        value="3"
+                        footer="High level alerts"
+                    />
                 </CardContent>
             </Card>
           </TabsContent>
