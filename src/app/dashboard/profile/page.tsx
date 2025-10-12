@@ -50,15 +50,15 @@ function InfoCard({
                     <Icon className="h-5 w-5" />
                 </div>
                 <div className="ml-4 flex-grow">
-                    <p className="text-xs text-muted-foreground flex items-center">
-                        {label}
+                    <div className="text-xs text-muted-foreground flex items-center">
+                        <span>{label}</span>
                         {isVerified && (
                              <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800 border-none text-xs font-medium">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 Verified
                             </Badge>
                         )}
-                    </p>
+                    </div>
                     <p className="font-semibold">{value}</p>
                 </div>
                 {action && <div className="ml-auto pl-2">{action}</div>}
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                         />
                         <SettingsItem 
                             icon={MonitorSmartphone} 
-                            title="Active Sessions" 
+                            title="Active Sessions" _
                             subtitle={`${user.activeSessions} active sessions`} 
                             onTap={() => {}}
                         />
@@ -244,5 +244,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-
-    
