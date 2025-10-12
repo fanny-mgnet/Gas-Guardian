@@ -5,6 +5,12 @@
       "description": "A generic user avatar",
       "imageUrl": "https://picsum.photos/seed/avatar1/40/40",
       "imageHint": "person avatar"
+    },
+    {
+      "id": "user-avatar-lg",
+      "description": "A generic large user avatar placeholder",
+      "imageUrl": "https://picsum.photos/seed/avatar-lg/96/96",
+      "imageHint": "person picture"
     }
   ]
 }
