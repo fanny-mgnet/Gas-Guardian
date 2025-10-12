@@ -7,15 +7,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Package2 } from 'lucide-react';
 
 export function Header() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-            <SidebarTrigger className="md:hidden" />
+            <div className="flex items-center gap-2 font-bold">
+                <Package2 className="h-6 w-6" />
+                <span>SmartGas</span>
+            </div>
             <div className="w-full flex-1">
                 {/* Optional: Add Breadcrumbs or Search */}
             </div>

@@ -11,6 +11,27 @@ import { LayoutDashboard, HardHat, BarChart2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
+export const navItems = [
+    {
+        href: '/dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        isActive: (pathname: string) => pathname === '/dashboard',
+    },
+    {
+        href: '/dashboard/devices',
+        label: 'Devices',
+        icon: HardHat,
+        isActive: (pathname: string) => pathname.startsWith('/dashboard/devices'),
+    },
+    {
+        href: '/dashboard/statistics',
+        label: 'Statistics',
+        icon: BarChart2,
+        isActive: (pathname: string) => pathname.startsWith('/dashboard/statistics'),
+    },
+];
+
 export function Nav() {
   const pathname = usePathname();
 
@@ -18,39 +39,19 @@ export function Nav() {
     <SidebarGroup>
       <SidebarGroupLabel>Navigation</SidebarGroupLabel>
       <SidebarMenu>
-        <SidebarMenuItem>
-          <Link href="/dashboard" legacyBehavior passHref>
-            <SidebarMenuButton
-              isActive={pathname === '/dashboard'}
-              tooltip="Dashboard"
-            >
-              <LayoutDashboard />
-              <span>Dashboard</span>
-            </SidebarMenuButton>
-          </Link>
-        </SidebarMenuItem>
-        <SidebarMenuItem>
-          <Link href="/dashboard/devices" legacyBehavior passHref>
-            <SidebarMenuButton
-              isActive={pathname.startsWith('/dashboard/devices')}
-              tooltip="Devices"
-            >
-              <HardHat />
-              <span>Devices</span>
-            </SidebarMenuButton>
-          </Link>
-        </SidebarMenuItem>
-        <SidebarMenuItem>
-          <Link href="/dashboard/statistics" legacyBehavior passHref>
-            <SidebarMenuButton
-              isActive={pathname.startsWith('/dashboard/statistics')}
-              tooltip="Statistics"
-            >
-              <BarChart2 />
-              <span>Statistics</span>
-            </SidebarMenuButton>
-          </Link>
-        </SidebarMenuItem>
+        {navItems.map(item => (
+            <SidebarMenuItem key={item.href}>
+                <Link href={item.href} legacyBehavior passHref>
+                    <SidebarMenuButton
+                        isActive={item.isActive(pathname)}
+                        tooltip={item.label}
+                    >
+                        <item.icon />
+                        <span>{item.label}</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+        ))}
       </SidebarMenu>
     </SidebarGroup>
   );
