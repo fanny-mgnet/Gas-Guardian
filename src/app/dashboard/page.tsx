@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GasLevelKnob } from '@/components/gas-level-knob';
@@ -6,6 +5,7 @@ import { DeviceCard } from '@/components/device-card';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { getAllAlerts, getDevices } from '@/lib/data';
 import type { Alert } from '@/lib/types';
+import { AddDeviceDialog } from '@/components/add-device-dialog';
 
 export default async function Dashboard() {
   const devices = await getDevices();
@@ -53,16 +53,15 @@ export default async function Dashboard() {
           </div>
         </div>
 
-        <Button
-          asChild
-          className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-lg"
-          size="icon"
-        >
-          <Link href="/dashboard/devices/new">
+        <AddDeviceDialog>
+            <Button
+            className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-lg"
+            size="icon"
+            >
             <Plus className="h-8 w-8" />
             <span className="sr-only">Add Device</span>
-          </Link>
-        </Button>
+            </Button>
+        </AddDeviceDialog>
       </main>
     </div>
   );
