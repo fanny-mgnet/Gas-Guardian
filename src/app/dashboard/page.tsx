@@ -9,7 +9,7 @@ import type { Alert, Device } from '@/lib/types';
 import { AddDeviceDialog } from '@/components/add-device-dialog';
 import Link from 'next/link';
 import { Header } from '@/components/header';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -73,18 +73,19 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export default function Dashboard() {
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
   const devicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'devices') : null, [firestore]);
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemoFirebase(() => 
-    firestore ? query(collectionGroup(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50)) : null, 
-    [firestore]
+    (firestore && user) ? query(collectionGroup(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50)) : null, 
+    [firestore, user]
   );
   const { data: allAlerts, isLoading: alertsLoading } = useCollection<Alert>(alertsQuery);
 
 
-  if (devicesLoading || alertsLoading) {
+  if (devicesLoading || alertsLoading || isUserLoading) {
     return <DashboardLoading />;
   }
 
@@ -95,7 +96,7 @@ export default function Dashboard() {
   }
 
   const latestAlert = getLatestAlert();
-  const gasLevel = latestAlert ? JSON.parse(latestAlert.sensorData).gas_value : 0;
+  const gasLevel = latestAlert && latestAlert.sensorData ? JSON.parse(latestAlert.sensorData).gas_value : 0;
   const lastUpdated = latestAlert?.createdAt;
 
   const getLatestAlertForDevice = (deviceId: string): Alert | undefined => {
