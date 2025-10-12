@@ -10,6 +10,7 @@ import {
   Mail,
   Settings as SettingsIcon,
   ShieldAlert,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,14 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 function SettingsItem({
@@ -171,6 +180,17 @@ export default function NotificationsSettingsPage() {
   const [smsAlerts, setSmsAlerts] = useState(false);
   const [emailSummaries, setEmailSummaries] = useState(true);
   const [quietHours, setQuietHours] = useState(false);
+  const [vibrationPattern, setVibrationPattern] = useState('Default');
+  const [ledColor, setLedColor] = useState('blue');
+
+  const vibrationPatterns = ['Default', 'Short', 'Long', 'Double', 'Triple'];
+  const ledColors = [
+    { name: 'blue', hex: 'bg-blue-500' },
+    { name: 'red', hex: 'bg-red-500' },
+    { name: 'green', hex: 'bg-green-500' },
+    { name: 'yellow', hex: 'bg-yellow-500' },
+    { name: 'purple', hex: 'bg-purple-500' },
+  ];
 
   return (
     <div className="bg-background min-h-screen">
@@ -186,7 +206,7 @@ export default function NotificationsSettingsPage() {
         </Button>
       </header>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 pb-24">
         <Card>
           <CardHeader>
             <CardTitle>Gas Alert Settings</CardTitle>
@@ -314,9 +334,9 @@ export default function NotificationsSettingsPage() {
           </CardContent>
         </Card>
 
-         <Card>
+        <Card>
           <CardContent className="p-4">
-             <SettingsItem
+            <SettingsItem
               title="Quiet Hours"
               description="Disable non-critical notifications"
             >
@@ -325,6 +345,74 @@ export default function NotificationsSettingsPage() {
                 onCheckedChange={setQuietHours}
               />
             </SettingsItem>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Advanced Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium mb-2">Notification Sound</h3>
+              <Select defaultValue="default">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a sound" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="chime">Chime</SelectItem>
+                  <SelectItem value="alarm">Alarm</SelectItem>
+                  <SelectItem value="beep">Beep</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-2">Vibration Pattern</h3>
+              <div className="flex flex-wrap gap-2">
+                {vibrationPatterns.map((pattern) => (
+                  <Button
+                    key={pattern}
+                    variant={vibrationPattern === pattern ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setVibrationPattern(pattern)}
+                    className="rounded-full"
+                  >
+                    {pattern}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-2">LED Color (Android)</h3>
+              <div className="flex items-center gap-3">
+                {ledColors.map((color) => (
+                  <button
+                    key={color.name}
+                    onClick={() => setLedColor(color.name)}
+                    className={cn(
+                      'h-8 w-8 rounded-full border-2 transition-all flex items-center justify-center',
+                      ledColor === color.name
+                        ? 'border-primary'
+                        : 'border-transparent'
+                    )}
+                  >
+                    <div className={cn('h-6 w-6 rounded-full', color.hex)}>
+                      {ledColor === color.name && (
+                        <Check className="h-4 w-4 text-white m-auto" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button className="w-full">
+              <Bell className="mr-2 h-4 w-4" />
+              Test Notification
+            </Button>
           </CardContent>
         </Card>
       </div>
