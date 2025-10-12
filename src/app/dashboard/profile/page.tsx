@@ -48,8 +48,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
+import { useUser } from '@/firebase';
 
 function InfoCard({
     icon: Icon,
@@ -150,15 +149,16 @@ function SettingsItem({
 export default function ProfilePage() {
     const { toast } = useToast();
     const router = useRouter();
-    const auth = useAuth();
+    const { user, signOut: handleLogout } = useUser();
     const userAvatarLg = PlaceHolderImages.find(p => p.id === 'user-avatar-lg');
-    const user = {
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@email.com',
-        phone: '+1 555-0123',
+    
+    const profileData = {
+        name: user?.displayName || 'Sarah Johnson',
+        email: user?.email || 'sarah.johnson@email.com',
+        phone: user?.phoneNumber || '+1 555-0123',
         emergencyContact: '+1 555-0456',
-        accountCreated: 'January 15, 2024',
-        isEmailVerified: true,
+        accountCreated: user?.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'January 15, 2024',
+        isEmailVerified: user?.emailVerified || true,
         subscription: 'Premium Plan',
         connectedDevices: 5,
         dataUsage: '2.3 GB',
@@ -167,24 +167,6 @@ export default function ProfilePage() {
         isMetricUnits: true,
         language: 'English',
         theme: 'Light Mode',
-    };
-
-    const handleLogout = async () => {
-        if (!auth) return;
-        try {
-            await signOut(auth);
-            toast({
-                title: 'Logged Out',
-                description: 'You have been successfully logged out.',
-            });
-            router.push('/login');
-        } catch (error) {
-             toast({
-                variant: 'destructive',
-                title: 'Logout Failed',
-                description: 'An error occurred while logging out. Please try again.',
-            });
-        }
     };
 
     const handleNotImplemented = (feature: string) => {
@@ -218,7 +200,7 @@ export default function ProfilePage() {
                 <div className="relative w-28 h-28 mx-auto my-4">
                     <div className="relative w-full h-full group">
                         <Image
-                            src={userAvatarLg?.imageUrl || 'https://picsum.photos/seed/avatar-lg/96/96'}
+                            src={user?.photoURL || userAvatarLg?.imageUrl || 'https://picsum.photos/seed/avatar-lg/96/96'}
                             width={112}
                             height={112}
                             alt="User avatar"
@@ -232,16 +214,16 @@ export default function ProfilePage() {
                 </div>
                 
                 <div className="space-y-2 mb-6">
-                    <InfoCard icon={User} label="Full Name" value={user.name} action={editButton} />
-                    <InfoCard icon={Mail} label="Email Address" value={user.email} action={editButton} isVerified={user.isEmailVerified} />
-                    <InfoCard icon={Phone} label="Phone Number" value={user.phone} action={editButton} />
-                    <InfoCard icon={Calendar} label="Account Created" value={user.accountCreated} />
+                    <InfoCard icon={User} label="Full Name" value={profileData.name} action={editButton} />
+                    <InfoCard icon={Mail} label="Email Address" value={profileData.email} action={editButton} isVerified={profileData.isEmailVerified} />
+                    <InfoCard icon={Phone} label="Phone Number" value={profileData.phone} action={editButton} />
+                    <InfoCard icon={Calendar} label="Account Created" value={profileData.accountCreated} />
                 </div>
 
                 <div className="space-y-4 mb-6">
                     <SectionHeader icon={User} title="Personal Information" subtitle="Manage your personal details" />
                     <div className="space-y-2">
-                        <SettingsItem icon={Star} title="Emergency Contact" subtitle={user.emergencyContact} iconBg="bg-red-100" onTap={() => handleNotImplemented('Editing emergency contact')}/>
+                        <SettingsItem icon={Star} title="Emergency Contact" subtitle={profileData.emergencyContact} iconBg="bg-red-100" onTap={() => handleNotImplemented('Editing emergency contact')}/>
                     </div>
                 </div>
                 
@@ -251,19 +233,19 @@ export default function ProfilePage() {
                         <SettingsItem 
                             icon={CreditCard} 
                             title="Subscription Status" 
-                            subtitle={user.subscription}
+                            subtitle={profileData.subscription}
                             trailing={<Badge variant="secondary" className="bg-blue-100 text-blue-800 border-none">Active</Badge>}
                         />
                         <SettingsItem 
                             icon={Smartphone} 
                             title="Connected Devices" 
-                            subtitle={`${user.connectedDevices} devices connected`}
+                            subtitle={`${profileData.connectedDevices} devices connected`}
                             onTap={() => router.push('/dashboard/devices')}
                         />
                         <SettingsItem 
                             icon={Database} 
                             title="Data Usage" 
-                            subtitle={`Monthly usage: ${user.dataUsage}`}
+                            subtitle={`Monthly usage: ${profileData.dataUsage}`}
                         />
                     </div>
                 </div>
@@ -280,13 +262,13 @@ export default function ProfilePage() {
                         <SettingsItem 
                             icon={KeyRound} 
                             title="Two-Factor Authentication" 
-                            subtitle={user.twoFactorEnabled ? 'Enabled' : 'Disabled'} 
-                            trailing={<Switch checked={user.twoFactorEnabled} onCheckedChange={() => handleNotImplemented('2FA')}/>}
+                            subtitle={profileData.twoFactorEnabled ? 'Enabled' : 'Disabled'} 
+                            trailing={<Switch checked={profileData.twoFactorEnabled} onCheckedChange={() => handleNotImplemented('2FA')}/>}
                         />
                         <SettingsItem 
                             icon={MonitorSmartphone} 
                             title="Active Sessions" 
-                            subtitle={`${user.activeSessions} active sessions`} 
+                            subtitle={`${profileData.activeSessions} active sessions`} 
                             onTap={() => handleNotImplemented('Managing active sessions')}
                         />
                     </div>
@@ -298,19 +280,19 @@ export default function ProfilePage() {
                         <SettingsItem 
                             icon={Sun} 
                             title="Theme" 
-                            subtitle={user.theme} 
+                            subtitle={profileData.theme} 
                             trailing={<Switch onCheckedChange={() => handleNotImplemented('Theme switching')} />}
                         />
                         <SettingsItem 
                             icon={Scale} 
                             title="Measurement Units" 
                             subtitle="Metric (°C, kg)" 
-                            trailing={<Switch defaultChecked={user.isMetricUnits} onCheckedChange={() => handleNotImplemented('Unit switching')} />}
+                            trailing={<Switch defaultChecked={profileData.isMetricUnits} onCheckedChange={() => handleNotImplemented('Unit switching')} />}
                         />
                         <SettingsItem 
                             icon={Globe} 
-                            title="Language" _
-                            subtitle={user.language} 
+                            title="Language" 
+                            subtitle={profileData.language} 
                             onTap={() => handleNotImplemented('Language selection')}
                         />
                     </div>

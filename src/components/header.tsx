@@ -27,34 +27,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
-import { useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
+import { useUser } from '@/firebase';
 
 export function Header() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
-    const router = useRouter();
-    const { toast } = useToast();
     const [open, setOpen] = React.useState(false);
-    const auth = useAuth();
+    const { user, signOut: handleLogout } = useUser();
 
-
-    const handleLogout = async () => {
-        if (!auth) return;
-        try {
-            await signOut(auth);
-            toast({
-                title: 'Logged Out',
-                description: 'You have been successfully logged out.',
-            });
-            router.push('/login');
-        } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Logout Failed',
-                description: 'An error occurred while logging out. Please try again.',
-            });
-        }
-    };
 
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -69,14 +48,24 @@ export function Header() {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="secondary" size="icon" className="rounded-full">
-                            {userAvatar && <Image
-                                src={userAvatar.imageUrl}
-                                width={40}
-                                height={40}
-                                alt={userAvatar.description}
-                                data-ai-hint={userAvatar.imageHint}
-                                className="rounded-full"
-                            />}
+                            {user?.photoURL ? (
+                                <Image
+                                    src={user.photoURL}
+                                    width={40}
+                                    height={40}
+                                    alt="User avatar"
+                                    className="rounded-full"
+                                />
+                            ) : userAvatar && (
+                                <Image
+                                    src={userAvatar.imageUrl}
+                                    width={40}
+                                    height={40}
+                                    alt={userAvatar.description}
+                                    data-ai-hint={userAvatar.imageHint}
+                                    className="rounded-full"
+                                />
+                            )}
                             <span className="sr-only">Toggle user menu</span>
                         </Button>
                     </DropdownMenuTrigger>
