@@ -7,7 +7,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, HardHat } from 'lucide-react';
+import { LayoutDashboard, HardHat, BarChart2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -37,6 +37,17 @@ export function Nav() {
             >
               <HardHat />
               <span>Devices</span>
+            </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <Link href="/dashboard/statistics" legacyBehavior passHref>
+            <SidebarMenuButton
+              isActive={pathname.startsWith('/dashboard/statistics')}
+              tooltip="Statistics"
+            >
+              <BarChart2 />
+              <span>Statistics</span>
             </SidebarMenuButton>
           </Link>
         </SidebarMenuItem>
