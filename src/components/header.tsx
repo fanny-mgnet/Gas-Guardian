@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Package2 } from 'lucide-react';
+import Link from 'next/link';
 
 export function Header() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
@@ -37,10 +38,16 @@ export function Header() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>
+                    <Link href="/dashboard/profile">My Account</Link>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuItem>
+                    <Link href="/dashboard/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                    <Link href="/dashboard/support">Support</Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Logout</DropdownMenuItem>
             </DropdownMenuContent>

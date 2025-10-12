@@ -1,15 +1,14 @@
 'use client';
 
 import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarGroup,
-  SidebarGroupLabel
-} from '@/components/ui/sidebar';
-import { LayoutDashboard, HardHat, BarChart2, User } from 'lucide-react';
+  LayoutDashboard,
+  HardHat,
+  BarChart2,
+  User,
+  Settings,
+  LifeBuoy
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 
 export const navItems = [
     {
@@ -37,28 +36,3 @@ export const navItems = [
         isActive: (pathname: string) => pathname.startsWith('/dashboard/profile'),
     },
 ];
-
-export function Nav() {
-  const pathname = usePathname();
-
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-      <SidebarMenu>
-        {navItems.map(item => (
-            <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
-                    <SidebarMenuButton
-                        isActive={item.isActive(pathname)}
-                        tooltip={item.label}
-                    >
-                        <item.icon />
-                        <span>{item.label}</span>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-        ))}
-      </SidebarMenu>
-    </SidebarGroup>
-  );
-}
