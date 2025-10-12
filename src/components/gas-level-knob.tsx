@@ -21,8 +21,9 @@ export function GasLevelKnob({ gasLevel, lastUpdated }: GasLevelKnobProps) {
     setIsClient(true);
   }, []);
 
-
-  const percentage = Math.min(Math.round((gasLevel / MAX_GAS_LEVEL) * 100), 100);
+  // Ensure gasLevel is a number, default to 0 if not
+  const numericGasLevel = typeof gasLevel === 'number' ? gasLevel : 0;
+  const percentage = Math.min(Math.round((numericGasLevel / MAX_GAS_LEVEL) * 100), 100);
   
   let status: 'Safe' | 'Warning' | 'Danger' = 'Safe';
   let colorClass = 'text-green-500';

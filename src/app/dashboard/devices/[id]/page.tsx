@@ -1,4 +1,8 @@
-import { getDeviceById, getAlertsByDeviceId } from '@/lib/data';
+'use client';
+
+import { useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import { notFound } from 'next/navigation';
 import {
   Card,
@@ -21,10 +25,21 @@ import { PredictiveMaintenance } from '@/components/predictive-maintenance';
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import type { Device, Alert } from '@/lib/types';
+import DeviceDetailLoading from './loading';
 
-export default async function DeviceDetailPage({ params }: { params: { id: string } }) {
-  const device = await getDeviceById(params.id);
-  const alerts = await getAlertsByDeviceId(params.id);
+export default function DeviceDetailPage({ params }: { params: { id: string } }) {
+  const firestore = useFirestore();
+
+  const deviceRef = useMemoFirebase(() => firestore ? doc(firestore, 'devices', params.id) : null, [firestore, params.id]);
+  const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
+
+  const alertsRef = useMemoFirebase(() => firestore ? collection(firestore, 'devices', params.id, 'alerts') : null, [firestore, params.id]);
+  const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
+
+  if (isDeviceLoading || isAlertsLoading) {
+    return <DeviceDetailLoading />;
+  }
 
   if (!device) {
     notFound();
@@ -41,7 +56,8 @@ export default async function DeviceDetailPage({ params }: { params: { id: strin
     }
   };
 
-  const latestAlert = alerts[0];
+  const sortedAlerts = alerts ? [...alerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
+  const latestAlert = sortedAlerts[0];
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
@@ -50,11 +66,11 @@ export default async function DeviceDetailPage({ params }: { params: { id: strin
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="font-headline text-2xl">{device.device_name}</CardTitle>
-                            <CardDescription>{device.mac_address}</CardDescription>
+                            <CardTitle className="font-headline text-2xl">{device.deviceName}</CardTitle>
+                            <CardDescription>{device.macAddress}</CardDescription>
                         </div>
-                        <Badge variant={device.is_active ? 'default' : 'destructive'} className={cn(device.is_active ? 'bg-green-600 hover:bg-green-700 text-primary-foreground' : '')}>
-                            {device.is_active ? 'Active' : 'Inactive'}
+                        <Badge variant={device.isActive ? 'default' : 'destructive'} className={cn(device.isActive ? 'bg-green-600 hover:bg-green-700 text-primary-foreground' : '')}>
+                            {device.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                     </div>
                 </CardHeader>
@@ -65,19 +81,19 @@ export default async function DeviceDetailPage({ params }: { params: { id: strin
                     </div>
                      <div>
                         <span className="font-semibold">SSID: </span>
-                        <span>{device.wifi_ssid}</span>
+                        <span>{device.wifiSsid}</span>
                     </div>
                      <div>
                         <span className="font-semibold">Registered: </span>
-                        <span>{new Date(device.created_at).toLocaleDateString()}</span>
+                        <span>{new Date(device.createdAt).toLocaleDateString()}</span>
                     </div>
                      <div>
                         <span className="font-semibold">Last Update: </span>
-                        <span>{new Date(device.updated_at).toLocaleString()}</span>
+                        <span>{new Date(device.updatedAt).toLocaleString()}</span>
                     </div>
                 </CardContent>
             </Card>
-            <GasLevelChart alerts={alerts} />
+            <GasLevelChart alerts={sortedAlerts} />
             <Card>
                 <CardHeader>
                     <CardTitle>Alert History</CardTitle>
@@ -94,17 +110,17 @@ export default async function DeviceDetailPage({ params }: { params: { id: strin
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {alerts.map(alert => (
+                    {sortedAlerts.map(alert => (
                       <TableRow key={alert.id}>
                         <TableCell>
-                          <Badge variant={getAlertVariant(alert.alert_type)} className={cn(getAlertVariant(alert.alert_type) === 'default' && 'bg-accent text-accent-foreground hover:bg-accent/80')}>
-                            {alert.alert_type.replace('gas_', '').toUpperCase()}
+                          <Badge variant={getAlertVariant(alert.alertType)} className={cn(getAlertVariant(alert.alertType) === 'default' && 'bg-accent text-accent-foreground hover:bg-accent/80')}>
+                            {alert.alertType.replace('gas_', '').toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">{alert.message}</TableCell>
-                        <TableCell>{alert.sensor_data.gas_value}</TableCell>
+                        <TableCell>{JSON.parse(alert.sensorData).gas_value}</TableCell>
                         <TableCell className="text-right">
-                          {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -114,20 +130,22 @@ export default async function DeviceDetailPage({ params }: { params: { id: strin
             </Card>
         </div>
         <div className="md:col-span-1 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Current Status</CardTitle>
-                    <CardDescription>Latest reported status from the device.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center space-y-2">
-                    {latestAlert.alert_type === 'gas_emergency' && <ShieldAlert className="h-16 w-16 text-destructive mx-auto" />}
-                    {latestAlert.alert_type === 'gas_warning' && <ShieldAlert className="h-16 w-16 text-accent mx-auto" />}
-                    {latestAlert.alert_type === 'gas_normal' && <ShieldCheck className="h-16 w-16 text-green-500 mx-auto" />}
-                    <p className="text-2xl font-bold">{latestAlert.alert_type.replace('gas_', '').toUpperCase()}</p>
-                    <p className="text-muted-foreground">{latestAlert.message}</p>
-                    <p className="text-sm text-muted-foreground">{formatDistanceToNow(new Date(latestAlert.created_at), { addSuffix: true })}</p>
-                </CardContent>
-            </Card>
+            {latestAlert && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Current Status</CardTitle>
+                        <CardDescription>Latest reported status from the device.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-center space-y-2">
+                        {latestAlert.alertType === 'gas_emergency' && <ShieldAlert className="h-16 w-16 text-destructive mx-auto" />}
+                        {latestAlert.alertType === 'gas_warning' && <ShieldAlert className="h-16 w-16 text-accent mx-auto" />}
+                        {latestAlert.alertType === 'gas_normal' && <ShieldCheck className="h-16 w-16 text-green-500 mx-auto" />}
+                        <p className="text-2xl font-bold">{latestAlert.alertType.replace('gas_', '').toUpperCase()}</p>
+                        <p className="text-muted-foreground">{latestAlert.message}</p>
+                        <p className="text-sm text-muted-foreground">{formatDistanceToNow(new Date(latestAlert.createdAt), { addSuffix: true })}</p>
+                    </CardContent>
+                </Card>
+            )}
             <PredictiveMaintenance deviceId={device.id} />
         </div>
     </div>

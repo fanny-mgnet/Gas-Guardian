@@ -14,22 +14,44 @@ import { Label } from "@/components/ui/label";
 import { Mail, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
+import { useAuth, useUser } from '@/firebase';
+import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { useEffect, useState } from "react";
 
-function InputField({ icon: Icon, id, type, placeholder }: { icon: React.ElementType, id: string, type: string, placeholder: string }) {
+function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { icon: React.ElementType, id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
         <div className="relative flex items-center">
             <Icon className="absolute left-3 h-5 w-5 text-muted-foreground" />
-            <Input id={id} type={type} placeholder={placeholder} className="pl-10 h-12" />
+            <Input id={id} type={type} placeholder={placeholder} className="pl-10 h-12" value={value} onChange={onChange} />
         </div>
     );
 }
 
 export default function LoginPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
 
   const handleLogin = () => {
-    router.push('/dashboard');
+    initiateEmailSignIn(auth, email, password);
   };
+
+  if (isUserLoading || (!isUserLoading && user)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen auth-gradient text-white">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen auth-gradient text-white">
@@ -41,9 +63,9 @@ export default function LoginPage() {
 
         <Card className="bg-card/90 backdrop-blur-sm text-card-foreground border-white/20">
           <CardContent className="p-6 space-y-4">
-              <InputField icon={Mail} id="email" type="email" placeholder="Email" />
+              <InputField icon={Mail} id="email" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
               <div className="space-y-2">
-                <InputField icon={Lock} id="password" type="password" placeholder="Password" />
+                <InputField icon={Lock} id="password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <div className="flex items-center">
                     <a href="#" className="ml-auto inline-block text-sm text-muted-foreground hover:text-primary">
                         Forgot your password?

@@ -14,7 +14,9 @@ interface DeviceCardProps {
 }
 
 export function DeviceCard({ device, latestAlert }: DeviceCardProps) {
-  const isConnected = device.is_active;
+  const isConnected = device.isActive;
+
+  const gasValue = latestAlert?.sensorData ? JSON.parse(latestAlert.sensorData).gas_value : 'N/A';
 
   return (
     <Link href={`/dashboard/devices/${device.id}`} className="min-w-[240px] flex-shrink-0">
@@ -26,7 +28,7 @@ export function DeviceCard({ device, latestAlert }: DeviceCardProps) {
                             <Cpu className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
-                            <CardTitle className="text-base font-medium">{device.device_name}</CardTitle>
+                            <CardTitle className="text-base font-medium">{device.deviceName}</CardTitle>
                             <CardDescription className="text-xs">GAS</CardDescription>
                         </div>
                     </div>
@@ -40,7 +42,7 @@ export function DeviceCard({ device, latestAlert }: DeviceCardProps) {
                 <div>
                     <p className="text-sm text-muted-foreground">Current Reading</p>
                     <p className="text-2xl font-bold">
-                        {latestAlert ? `${latestAlert.sensor_data.gas_value} ppm` : 'N/A'}
+                        {gasValue} ppm
                     </p>
                 </div>
                 <Badge variant={isConnected ? 'default' : 'secondary'} className={cn('font-normal text-xs', isConnected ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-none' : 'bg-muted text-muted-foreground border-none')}>
@@ -48,7 +50,7 @@ export function DeviceCard({ device, latestAlert }: DeviceCardProps) {
                     {isConnected ? 'Connected' : 'Disconnected'}
                     {latestAlert && isConnected && (
                         <span className="ml-1 opacity-80">
-                            {formatDistanceToNow(new Date(latestAlert.created_at), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(latestAlert.createdAt), { addSuffix: true })}
                         </span>
                     )}
                 </Badge>

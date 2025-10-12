@@ -13,23 +13,49 @@ import { Input } from "@/components/ui/input";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth, useUser } from '@/firebase';
+import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
+import { useState, useEffect } from 'react';
 
-function InputField({ icon: Icon, id, type, placeholder }: { icon: React.ElementType, id: string, type: string, placeholder: string }) {
+function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { icon: React.ElementType, id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
         <div className="relative flex items-center">
             <Icon className="absolute left-3 h-5 w-5 text-muted-foreground" />
-            <Input id={id} type={type} placeholder={placeholder} className="pl-10 h-12" />
+            <Input id={id} type={type} placeholder={placeholder} className="pl-10 h-12" value={value} onChange={onChange} />
         </div>
     );
 }
 
 export default function RegisterPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  // Other fields can be added here if needed for Firestore profile
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleRegister = () => {
-    // Implement registration logic here
-    router.push('/dashboard');
+    if (password !== confirmPassword) {
+      alert("Passwords do not match"); // Replace with better UI
+      return;
+    }
+    initiateEmailSignUp(auth, email, password);
   };
+
+  if (isUserLoading || (!isUserLoading && user)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen auth-gradient text-white">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen auth-gradient text-white">
@@ -41,11 +67,11 @@ export default function RegisterPage() {
 
         <Card className="bg-card/90 backdrop-blur-sm text-card-foreground border-white/20">
           <CardContent className="p-6 space-y-4">
-            <InputField icon={User} id="fullname" type="text" placeholder="Full Name" />
-            <InputField icon={Mail} id="email" type="email" placeholder="Email" />
-            <InputField icon={Phone} id="phone" type="tel" placeholder="Mobile Number (Optional)" />
-            <InputField icon={Lock} id="password" type="password" placeholder="Password" />
-            <InputField icon={Lock} id="confirm-password" type="password" placeholder="Confirm Password" />
+            <InputField icon={User} id="fullname" type="text" placeholder="Full Name" value={''} onChange={() => {}} />
+            <InputField icon={Mail} id="email" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <InputField icon={Phone} id="phone" type="tel" placeholder="Mobile Number (Optional)" value={''} onChange={() => {}} />
+            <InputField icon={Lock} id="password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <InputField icon={Lock} id="confirm-password" type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </CardContent>
           <CardFooter className="flex flex-col gap-4 p-6 pt-0">
             <Button className="w-full h-12 text-base" onClick={handleRegister}>Sign Up</Button>

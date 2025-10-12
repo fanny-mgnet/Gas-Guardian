@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -14,12 +16,55 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getDevices } from '@/lib/data';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Device } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default async function DevicesPage() {
-  const devices = await getDevices();
+function DevicesLoading() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-8 w-1/4" />
+        <Skeleton className="h-4 w-1/2" />
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Device Name</TableHead>
+              <TableHead>MAC Address</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Registered</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(3)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+export default function DevicesPage() {
+  const firestore = useFirestore();
+  const devicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'devices') : null, [firestore]);
+  const { data: devices, isLoading } = useCollection<Device>(devicesRef);
+
+  if (isLoading) {
+    return <DevicesLoading />;
+  }
 
   return (
     <Card>
@@ -40,20 +85,20 @@ export default async function DevicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {devices.map(device => (
+            {devices && devices.map(device => (
               <TableRow key={device.id}>
                 <TableCell className="font-medium">
                     <Link href={`/dashboard/devices/${device.id}`} className="hover:underline">
-                        {device.device_name}
+                        {device.deviceName}
                     </Link>
                 </TableCell>
-                <TableCell>{device.mac_address}</TableCell>
+                <TableCell>{device.macAddress}</TableCell>
                 <TableCell>
-                  <Badge variant={device.is_active ? 'default' : 'destructive'} className={cn(device.is_active ? 'bg-green-500 hover:bg-green-600 text-primary-foreground' : '')}>
-                    {device.is_active ? 'Active' : 'Inactive'}
+                  <Badge variant={device.isActive ? 'default' : 'destructive'} className={cn(device.isActive ? 'bg-green-500 hover:bg-green-600 text-primary-foreground' : '')}>
+                    {device.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
-                <TableCell>{new Date(device.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(device.createdAt).toLocaleDateString()}</TableCell>
               </TableRow>
             ))}
           </TableBody>

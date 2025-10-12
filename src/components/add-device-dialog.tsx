@@ -13,19 +13,52 @@ import {
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useState } from 'react';
 
 export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
     const { toast } = useToast();
+    const firestore = useFirestore();
+    const { user } = useUser();
+    const [isOpen, setIsOpen] = useState(false);
 
     const handleStartSetup = () => {
+        if (!firestore || !user) {
+            toast({
+                variant: 'destructive',
+                title: "Error",
+                description: "You must be logged in to add a device.",
+            });
+            return;
+        }
+
+        const devicesCollection = collection(firestore, 'devices');
+        
+        // This is mock data - in a real app, you'd get this from a setup flow
+        const newDevice = {
+            macAddress: `DE:AD:BE:EF:${Math.floor(Math.random() * 256).toString(16).padStart(2, '0')}:${Math.floor(Math.random() * 256).toString(16).padStart(2, '0')}`,
+            deviceName: "New SmartGas Hub",
+            wifiSsid: "Not Connected",
+            email: user.email || 'anonymous@example.com',
+            mobileNumber: "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            isActive: false,
+            userId: user.uid,
+        };
+
+        addDocumentNonBlocking(devicesCollection, newDevice);
+
         toast({
-            title: "Setup Started",
-            description: "Please follow the instructions on your device.",
+            title: "Device Added",
+            description: "New device has been registered to your account.",
         });
+        setIsOpen(false);
     };
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
@@ -40,9 +73,7 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="p-6 pt-4">
-                    <DialogClose asChild>
-                        <Button type="button" className="w-full" size="lg" onClick={handleStartSetup}>Start Setup</Button>
-                    </DialogClose>
+                    <Button type="button" className="w-full" size="lg" onClick={handleStartSetup}>Start Setup</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
