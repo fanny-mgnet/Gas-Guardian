@@ -40,12 +40,11 @@ export interface InternalQuery extends Query<DocumentData> {
 /**
  * React hook to subscribe to a Firestore collection or query in real-time.
  * Handles nullable references/queries.
- * 
  *
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
  * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
  * references
- *  
+ *
  * @template T Optional type for document data. Defaults to any.
  * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} memoizedTargetRefOrQuery -
  * The Firestore CollectionReference or Query. Waits if null/undefined.
@@ -70,6 +69,7 @@ export function useCollection<T = any>(
       return;
     }
 
+    // Set loading state to true when starting to fetch data
     setIsLoading(true);
     setError(null);
 
@@ -103,7 +103,9 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
+  // The dependency array is critical. It should ONLY contain the memoized query reference.
+  // This ensures the effect re-runs only if the query itself changes, not on every render.
   }, [memoizedTargetRefOrQuery]);
-  
+
   return { data, isLoading, error };
 }
