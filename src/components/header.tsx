@@ -8,6 +8,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -15,11 +26,14 @@ import { Package2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import React from 'react';
 
 export function Header() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
     const router = useRouter();
     const { toast } = useToast();
+    const [open, setOpen] = React.useState(false);
+
 
     const handleLogout = () => {
         toast({
@@ -38,35 +52,47 @@ export function Header() {
             <div className="w-full flex-1">
                 {/* Optional: Add Breadcrumbs or Search */}
             </div>
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" className="rounded-full">
-                    {userAvatar && <Image
-                        src={userAvatar.imageUrl}
-                        width={40}
-                        height={40}
-                        alt={userAvatar.description}
-                        data-ai-hint={userAvatar.imageHint}
-                        className="rounded-full"
-                    />}
-                    <span className="sr-only">Toggle user menu</span>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                    <Link href="/dashboard/profile">My Account</Link>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                    <Link href="/dashboard/settings">Settings</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                    <Link href="/dashboard/support">Support</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
-            </DropdownMenuContent>
-            </DropdownMenu>
+            <AlertDialog open={open} onOpenChange={setOpen}>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" size="icon" className="rounded-full">
+                            {userAvatar && <Image
+                                src={userAvatar.imageUrl}
+                                width={40}
+                                height={40}
+                                alt={userAvatar.description}
+                                data-ai-hint={userAvatar.imageHint}
+                                className="rounded-full"
+                            />}
+                            <span className="sr-only">Toggle user menu</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>
+                            <Link href="/dashboard/profile">My Account</Link>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild><Link href="/dashboard/settings">Settings</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/dashboard/support">Support</Link></DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Logout</DropdownMenuItem>
+                        </AlertDialogTrigger>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Logout</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to logout from your account?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Logout</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </header>
     );
 }

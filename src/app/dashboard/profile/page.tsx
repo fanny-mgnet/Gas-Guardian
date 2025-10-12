@@ -37,6 +37,17 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function InfoCard({
     icon: Icon,
@@ -234,7 +245,7 @@ export default function ProfilePage() {
                             icon={Smartphone} 
                             title="Connected Devices" 
                             subtitle={`${user.connectedDevices} devices connected`}
-                            onTap={() => {}}
+                            onTap={() => router.push('/dashboard/devices')}
                         />
                         <SettingsItem 
                             icon={Database} 
@@ -285,7 +296,7 @@ export default function ProfilePage() {
                         />
                         <SettingsItem 
                             icon={Globe} 
-                            title="Language" 
+                            title="Language" _
                             subtitle={user.language} 
                             onTap={() => handleNotImplemented('Language selection')}
                         />
@@ -293,10 +304,26 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="mt-8">
-                    <Button variant="destructive" className="w-full justify-center text-base py-6" onClick={handleLogout}>
-                        <LogOut className="mr-2 h-5 w-5" />
-                        Logout
-                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" className="w-full justify-center text-base py-6">
+                                <LogOut className="mr-2 h-5 w-5" />
+                                Logout
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Logout</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to logout from your account?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Logout</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
 
             </div>
