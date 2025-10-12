@@ -264,7 +264,7 @@ export default function NotificationsSettingsPage() {
         </Button>
       </header>
 
-      <div className="p-4 space-y-6 pb-32">
+      <div className="p-4 space-y-6 pb-40">
         <Card>
           <CardHeader>
             <CardTitle>Gas Alert Settings</CardTitle>
@@ -495,7 +495,7 @@ export default function NotificationsSettingsPage() {
       </div>
 
        {isDirty && (
-        <div className="fixed bottom-0 left-0 w-full bg-card border-t p-4 z-20">
+        <div className="fixed bottom-0 left-0 w-full bg-card border-t p-4 z-[60]">
           <div className="flex justify-end gap-4 max-w-lg mx-auto">
             <Button variant="ghost" onClick={handleCancelChanges}>Cancel</Button>
             <Button onClick={handleSaveChanges}>Save Changes</Button>
