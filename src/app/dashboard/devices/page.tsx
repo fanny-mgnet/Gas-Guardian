@@ -63,7 +63,7 @@ export default function DevicesPage() {
   const { user, isUserLoading } = useUser();
 
   const devicesRef = useMemo(() => {
-    if (firestore && user) {
+    if (firestore && user?.uid) {
       return collection(firestore, 'users', user.uid, 'devices');
     }
     return null;

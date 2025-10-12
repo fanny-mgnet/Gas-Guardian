@@ -75,7 +75,7 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
 
   const devicesRef = useMemo(() => {
-    if (firestore && user) {
+    if (firestore && user?.uid) {
       return collection(firestore, 'users', user.uid, 'devices');
     }
     return null;
@@ -83,7 +83,7 @@ export default function Dashboard() {
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemo(() => {
-    if (!firestore || !user) {
+    if (!firestore || !user?.uid) {
       return null;
     }
     return query(

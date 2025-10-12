@@ -34,7 +34,7 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
   const { user, isUserLoading } = useUser();
 
   const deviceRef = useMemo(() => {
-    if (firestore && user) {
+    if (firestore && user?.uid) {
       return doc(firestore, 'users', user.uid, 'devices', params.id);
     }
     return null;
@@ -42,7 +42,7 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
   const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
 
   const alertsRef = useMemo(() => {
-    if (firestore && user) {
+    if (firestore && user?.uid) {
       return collection(firestore, 'users', user.uid, 'devices', params.id, 'alerts');
     }
     return null;
