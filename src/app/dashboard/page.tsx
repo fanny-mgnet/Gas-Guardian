@@ -6,6 +6,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { getAllAlerts, getDevices } from '@/lib/data';
 import type { Alert } from '@/lib/types';
 import { AddDeviceDialog } from '@/components/add-device-dialog';
+import Link from 'next/link';
 
 export default async function Dashboard() {
   const devices = await getDevices();
@@ -21,20 +22,18 @@ export default async function Dashboard() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <main className="flex flex-1 flex-col gap-4 md:gap-8 relative">
+      <main className="flex flex-1 flex-col gap-4 md:gap-8">
         <DashboardHeader />
         <GasLevelKnob gasLevel={gasLevel} lastUpdated={lastUpdated} />
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="grid gap-2">
-              <h2 className="text-xl font-bold tracking-tight">
-                Connected Devices
-              </h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-xl font-bold tracking-tight">
+              Connected Devices
+            </h2>
+            <Link href="/dashboard/devices" className="text-sm font-medium text-primary hover:underline">
               {devices.length} devices
-            </p>
+            </Link>
           </div>
 
           <div className="relative">
@@ -55,7 +54,7 @@ export default async function Dashboard() {
 
         <AddDeviceDialog>
             <Button
-            className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-lg"
+            className="fixed bottom-20 right-4 h-16 w-16 rounded-2xl shadow-lg z-40"
             size="icon"
             >
             <Plus className="h-8 w-8" />

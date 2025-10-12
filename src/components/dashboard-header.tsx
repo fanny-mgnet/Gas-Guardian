@@ -22,7 +22,7 @@ export function DashboardHeader() {
       }
 
       setTime(
-        now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
       );
     };
 
@@ -37,7 +37,7 @@ export function DashboardHeader() {
         <h1 className="text-2xl font-bold">{greeting}</h1>
         <p className="text-muted-foreground">{time}</p>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Badge
           variant="secondary"
           className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-200 dark:border-green-800"

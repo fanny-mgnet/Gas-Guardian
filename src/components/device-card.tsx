@@ -18,15 +18,15 @@ export function DeviceCard({ device, latestAlert }: DeviceCardProps) {
 
   return (
     <Link href={`/dashboard/devices/${device.id}`} className="min-w-[240px] flex-shrink-0">
-        <Card className="hover:border-primary transition-colors h-full bg-card shadow-md">
+        <Card className="hover:border-primary transition-colors h-full bg-card shadow-sm border">
             <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted rounded-full">
+                        <div className="p-2 bg-muted rounded-lg">
                             <Cpu className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
-                            <CardTitle className="text-base">{device.device_name}</CardTitle>
+                            <CardTitle className="text-base font-medium">{device.device_name}</CardTitle>
                             <CardDescription className="text-xs">GAS</CardDescription>
                         </div>
                     </div>
@@ -36,19 +36,19 @@ export function DeviceCard({ device, latestAlert }: DeviceCardProps) {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2">
                 <div>
                     <p className="text-sm text-muted-foreground">Current Reading</p>
-                    <p className="text-2xl font-bold text-primary">
+                    <p className="text-2xl font-bold">
                         {latestAlert ? `${latestAlert.sensor_data.gas_value} ppm` : 'N/A'}
                     </p>
                 </div>
-                <Badge variant={isConnected ? 'default' : 'secondary'} className={cn('font-normal', isConnected ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-200 dark:border-green-800' : '')}>
-                    <span className={cn('mr-2 h-2 w-2 rounded-full', isConnected ? 'bg-green-500' : 'bg-muted-foreground')}></span>
+                <Badge variant={isConnected ? 'default' : 'secondary'} className={cn('font-normal text-xs', isConnected ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-none' : 'bg-muted text-muted-foreground border-none')}>
+                    <span className={cn('mr-1.5 h-2 w-2 rounded-full', isConnected ? 'bg-green-500' : 'bg-gray-400')}></span>
                     {isConnected ? 'Connected' : 'Disconnected'}
                     {latestAlert && isConnected && (
-                        <span className="ml-1 text-muted-foreground/80">
-                            - {formatDistanceToNow(new Date(latestAlert.created_at), { addSuffix: true })}
+                        <span className="ml-1 opacity-80">
+                            {formatDistanceToNow(new Date(latestAlert.created_at), { addSuffix: true })}
                         </span>
                     )}
                 </Badge>

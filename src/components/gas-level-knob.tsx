@@ -26,19 +26,16 @@ export function GasLevelKnob({ gasLevel, lastUpdated }: GasLevelKnobProps) {
   
   let status: 'Safe' | 'Warning' | 'Danger' = 'Safe';
   let colorClass = 'text-green-500';
-  let ringColorClass = 'ring-green-500';
   let progressColorClass = 'stroke-green-500';
 
   if (percentage > 75) {
     status = 'Danger';
     colorClass = 'text-destructive';
-    ringColorClass = 'ring-destructive';
     progressColorClass = 'stroke-destructive';
   } else if (percentage > 40) {
     status = 'Warning';
-    colorClass = 'text-accent';
-    ringColorClass = 'ring-accent';
-    progressColorClass = 'stroke-accent';
+    colorClass = 'text-yellow-500';
+    progressColorClass = 'stroke-yellow-500';
   }
 
   const circumference = 2 * Math.PI * 52; // 2 * pi * radius
@@ -55,19 +52,20 @@ export function GasLevelKnob({ gasLevel, lastUpdated }: GasLevelKnobProps) {
             {/* Background Circle */}
             <circle
               className="stroke-current text-gray-200 dark:text-gray-700"
+              stroke-opacity="0.5"
               cx="60"
               cy="60"
               r="52"
-              strokeWidth="10"
+              strokeWidth="8"
               fill="transparent"
             />
             {/* Progress Circle */}
             <circle
-              className={cn('stroke-current transition-all duration-500', progressColorClass)}
+              className={cn('transition-all duration-500', progressColorClass)}
               cx="60"
               cy="60"
               r="52"
-              strokeWidth="10"
+              strokeWidth="8"
               fill="transparent"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
@@ -81,7 +79,7 @@ export function GasLevelKnob({ gasLevel, lastUpdated }: GasLevelKnobProps) {
           </div>
         </div>
         {lastUpdated && isClient && (
-          <Badge variant="secondary" className="flex items-center gap-1">
+          <Badge variant="secondary" className="flex items-center gap-1.5 font-normal">
             <Clock className="h-3 w-3" />
             <span>Updated {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })}</span>
           </Badge>

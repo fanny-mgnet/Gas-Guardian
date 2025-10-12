@@ -19,7 +19,7 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md rounded-lg bottom-0 translate-y-0 sm:bottom-auto sm:translate-y-[-50%]">
+            <DialogContent className="sm:max-w-md rounded-lg">
                 <DialogHeader className="items-center text-center pt-8">
                     <div className="bg-primary rounded-full p-3 w-14 h-14 flex items-center justify-center mb-4">
                         <Plus className="h-8 w-8 text-primary-foreground" />
