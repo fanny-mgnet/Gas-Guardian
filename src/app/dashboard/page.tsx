@@ -5,104 +5,59 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { getAllAlerts, getDevices } from '@/lib/data';
 import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { GasLevelKnob } from '@/components/gas-level-knob';
+import { DeviceCard } from '@/components/device-card';
+import type { Alert } from '@/lib/types';
 
 export default async function Dashboard() {
   const devices = await getDevices();
   const allAlerts = await getAllAlerts();
 
-  const recentAlerts = allAlerts.slice(0, 5);
-
-  const getAlertVariant = (type: string) => {
-    switch (type) {
-      case 'gas_emergency':
-        return 'destructive';
-      case 'gas_warning':
-        return 'default';
-      default:
-        return 'secondary';
-    }
-  };
-
   const latestAlert = allAlerts[0]
   const gasLevel = latestAlert?.sensor_data.gas_value ?? 0;
   const lastUpdated = latestAlert?.created_at;
 
+  const getLatestAlertForDevice = (deviceId: string): Alert | undefined => {
+    return allAlerts.find(alert => alert.device_id === deviceId);
+  }
+
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <main className="flex flex-1 flex-col gap-4 md:gap-8">
+      <main className="flex flex-1 flex-col gap-4 md:gap-8 relative">
         <GasLevelKnob gasLevel={gasLevel} lastUpdated={lastUpdated} />
-        <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex flex-row items-center">
+        
+        <div className='space-y-4'>
+            <div className='flex items-center justify-between'>
                 <div className="grid gap-2">
-                    <CardTitle>Recent Alerts</CardTitle>
-                    <CardDescription>
-                        An overview of the latest system-wide alerts.
-                    </CardDescription>
+                    <h2 className="text-2xl font-bold tracking-tight">Connected Devices</h2>
+                    <p className="text-sm text-muted-foreground">
+                        {devices.length} devices online
+                    </p>
                 </div>
-                <Button asChild size="sm" className="ml-auto gap-1">
-                    <Link href="/dashboard/devices">
-                        View All
-                        <ArrowUpRight className="h-4 w-4" />
-                    </Link>
-                </Button>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Device</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Gas Level</TableHead>
-                    <TableHead className="text-right">Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentAlerts.map(alert => {
-                    const device = devices.find(d => d.id === alert.device_id);
-                    return (
-                      <TableRow key={alert.id}>
-                        <TableCell>
-                          <div className="font-medium">{device?.device_name}</div>
-                          <div className="hidden text-sm text-muted-foreground md:inline">
-                            {device?.mac_address}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                           <Badge variant={getAlertVariant(alert.alert_type)} className={cn(getAlertVariant(alert.alert_type) === 'default' && 'bg-accent text-accent-foreground hover:bg-accent/80')}>
-                            {alert.alert_type.replace('gas_', '').toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {alert.sensor_data.gas_value}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+            </div>
+
+            <div className="relative">
+                <div className="flex w-full space-x-4 pb-4 overflow-x-auto">
+                    {devices.map(device => {
+                        const latestDeviceAlert = getLatestAlertForDevice(device.id);
+                        return (
+                           <DeviceCard key={device.id} device={device} latestAlert={latestDeviceAlert}/>
+                        )
+                    })}
+                </div>
+            </div>
         </div>
+
+        <Button asChild className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-lg" size="icon">
+          <Link href="/dashboard/devices/new">
+            <Plus className="h-8 w-8" />
+            <span className="sr-only">Add Device</span>
+          </Link>
+        </Button>
       </main>
     </div>
   );
