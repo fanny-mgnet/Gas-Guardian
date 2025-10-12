@@ -29,7 +29,8 @@ import {
     SlidersHorizontal,
     Sun,
     Scale,
-    Globe
+    Globe,
+    LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -270,6 +271,13 @@ export default function ProfilePage() {
                             onTap={() => {}}
                         />
                     </div>
+                </div>
+
+                <div className="mt-8">
+                    <Button variant="destructive" className="w-full justify-center text-base py-6">
+                        <LogOut className="mr-2 h-5 w-5" />
+                        Logout
+                    </Button>
                 </div>
 
             </div>
