@@ -1,6 +1,6 @@
 'use client';
 
-import { useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { useDoc, useCollection, useUser } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { notFound } from 'next/navigation';
@@ -27,23 +27,39 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Device, Alert } from '@/lib/types';
 import DeviceDetailLoading from './loading';
+import { useMemo } from 'react';
 
 export default function DeviceDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const deviceRef = useMemoFirebase(() => (firestore) ? doc(firestore, 'devices', params.id) : null, [firestore, params.id]);
+  const deviceRef = useMemo(() => {
+    if (firestore && user) {
+      return doc(firestore, 'devices', params.id);
+    }
+    return null;
+  }, [firestore, user, params.id]);
   const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
 
-  const alertsRef = useMemoFirebase(() => (firestore) ? collection(firestore, 'devices', params.id, 'alerts') : null, [firestore, params.id]);
+  const alertsRef = useMemo(() => {
+    if (firestore && user) {
+      return collection(firestore, 'devices', params.id, 'alerts');
+    }
+    return null;
+  }, [firestore, user, params.id]);
   const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
 
-  if (isDeviceLoading || isAlertsLoading || !device) {
+  if (isDeviceLoading || isAlertsLoading || !user) {
     return <DeviceDetailLoading />;
   }
   
   if (!device) {
-    return notFound();
+    // This could be because it's still loading or it doesn't exist.
+    // If loading is finished and there's no device, then show not found.
+    if (!isDeviceLoading) {
+      return notFound();
+    }
+    return <DeviceDetailLoading />;
   }
 
   const getAlertVariant = (type: string) => {

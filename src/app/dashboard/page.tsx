@@ -9,10 +9,11 @@ import type { Alert, Device } from '@/lib/types';
 import { AddDeviceDialog } from '@/components/add-device-dialog';
 import Link from 'next/link';
 import { Header } from '@/components/header';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useMemo } from 'react';
 
 function DashboardLoading() {
   return (
@@ -71,21 +72,26 @@ function DashboardLoading() {
 
 export default function Dashboard() {
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const devicesRef = useMemoFirebase(() => 
-    (firestore) ? collection(firestore, 'devices') : null, 
-    [firestore]
-  );
+  const devicesRef = useMemo(() => {
+    if (firestore && user) {
+      return collection(firestore, 'devices');
+    }
+    return null;
+  }, [firestore, user]);
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
-  const alertsQuery = useMemoFirebase(() => 
-    (firestore) ? query(collectionGroup(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50)) : null, 
-    [firestore]
-  );
+  const alertsQuery = useMemo(() => {
+    if (firestore && user) {
+      return query(collectionGroup(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50));
+    }
+    return null;
+  }, [firestore, user]);
   const { data: allAlerts, isLoading: alertsLoading } = useCollection<Alert>(alertsQuery);
 
 
-  if (devicesLoading || alertsLoading) {
+  if (devicesLoading || alertsLoading || !user) {
     return <DashboardLoading />;
   }
 

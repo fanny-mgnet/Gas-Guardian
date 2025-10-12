@@ -18,10 +18,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Device } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 
 function DevicesLoading() {
   return (
@@ -59,10 +60,17 @@ function DevicesLoading() {
 
 export default function DevicesPage() {
   const firestore = useFirestore();
-  const devicesRef = useMemoFirebase(() => (firestore) ? collection(firestore, 'devices') : null, [firestore]);
+  const { user } = useUser();
+  const devicesRef = useMemo(() => {
+    if (firestore && user) {
+      return collection(firestore, 'devices');
+    }
+    return null;
+  }, [firestore, user]);
+
   const { data: devices, isLoading } = useCollection<Device>(devicesRef);
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return <DevicesLoading />;
   }
 
