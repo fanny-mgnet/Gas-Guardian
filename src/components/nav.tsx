@@ -38,6 +38,6 @@ export const navItems = [
         href: '/dashboard/profile',
         label: 'Profile',
         icon: User,
-        isActive: (pathname: string) => pathname.startsWith('/dashboard/profile'),
+        isActive: (pathname:string) => pathname.startsWith('/dashboard/profile'),
     },
 ];
