@@ -1,10 +1,9 @@
 export type Device = {
-  id: string; // UUID
+  id: string; // Document ID
   macAddress: string;
   deviceName: string;
   wifiSsid: string;
   email: string;
-  mobileNumber: string;
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   isActive: boolean;
@@ -12,10 +11,11 @@ export type Device = {
 };
 
 export type Alert = {
-  id: string; // UUID
+  id: string; // Document ID
   deviceId: string;
   alertType: 'gas_emergency' | 'gas_warning' | 'gas_normal';
   message: string;
   sensorData: string; // JSON string
   createdAt: string; // ISO date string
+  userId: string; // Denormalized for collection group queries
 };

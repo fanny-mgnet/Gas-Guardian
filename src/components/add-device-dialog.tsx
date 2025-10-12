@@ -32,15 +32,14 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        const devicesCollection = collection(firestore, 'devices');
+        // Devices are now stored under /users/{userId}/devices
+        const devicesCollection = collection(firestore, 'users', user.uid, 'devices');
         
-        // This is mock data - in a real app, you'd get this from a setup flow
         const newDevice = {
             macAddress: `DE:AD:BE:EF:${Math.floor(Math.random() * 256).toString(16).padStart(2, '0')}:${Math.floor(Math.random() * 256).toString(16).padStart(2, '0')}`,
             deviceName: "New SmartGas Hub",
             wifiSsid: "Not Connected",
             email: user.email || 'anonymous@example.com',
-            mobileNumber: "",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             isActive: false,

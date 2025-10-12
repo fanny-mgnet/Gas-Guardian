@@ -34,19 +34,19 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
   const { user, isUserLoading } = useUser();
 
   const deviceRef = useMemo(() => {
-    if (firestore) {
-      return doc(firestore, 'devices', params.id);
+    if (firestore && user) {
+      return doc(firestore, 'users', user.uid, 'devices', params.id);
     }
     return null;
-  }, [firestore, params.id]);
+  }, [firestore, user, params.id]);
   const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
 
   const alertsRef = useMemo(() => {
-    if (firestore) {
-      return collection(firestore, 'devices', params.id, 'alerts');
+    if (firestore && user) {
+      return collection(firestore, 'users', user.uid, 'devices', params.id, 'alerts');
     }
     return null;
-  }, [firestore, params.id]);
+  }, [firestore, user, params.id]);
   const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
 
   if (isDeviceLoading || isAlertsLoading || isUserLoading) {

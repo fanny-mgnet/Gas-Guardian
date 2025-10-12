@@ -8,22 +8,28 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getPrediction } from '@/lib/actions';
 import { Wand2, AlertTriangle, Loader2 } from 'lucide-react';
 import type { PredictFutureAlertsOutput } from '@/ai/flows/predictive-maintenance-alerts';
+import { useUser } from '@/firebase';
 
 interface PredictiveMaintenanceProps {
   deviceId: string;
 }
 
 export function PredictiveMaintenance({ deviceId }: PredictiveMaintenanceProps) {
+  const { user } = useUser();
   const [prediction, setPrediction] = useState<PredictFutureAlertsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePredict = async () => {
+    if (!user) {
+        setError("You must be logged in to use this feature.");
+        return;
+    }
     setIsLoading(true);
     setError(null);
     setPrediction(null);
 
-    const result = await getPrediction(deviceId);
+    const result = await getPrediction(deviceId, user.uid);
     if (result.error) {
       setError(result.error);
     } else if (result.data) {
