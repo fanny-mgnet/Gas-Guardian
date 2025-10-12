@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Share2,
@@ -15,6 +15,7 @@ import {
   Shield,
   ShieldAlert,
   BarChartHorizontal,
+  ArrowUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,43 +38,69 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
 
-const weeklyTrendData = [
-    { day: 'Mon', value: 35 },
-    { day: 'Tue', value: 42 },
-    { day: 'Wed', value: 38 },
-    { day: 'Thu', value: 45 },
-    { day: 'Fri', value: 51 },
-    { day: 'Sat', value: 48 },
-    { day: 'Sun', value: 55 },
-];
+const trendData = {
+    today: [
+      { time: '12am', value: 28 }, { time: '3am', value: 30 }, { time: '6am', value: 35 }, { time: '9am', value: 42 },
+      { time: '12pm', value: 55 }, { time: '3pm', value: 48 }, { time: '6pm', value: 45 }, { time: '9pm', value: 50 },
+    ],
+    week: [
+      { time: 'Mon', value: 35 }, { time: 'Tue', value: 42 }, { time: 'Wed', value: 38 }, { time: 'Thu', value: 45 },
+      { time: 'Fri', value: 51 }, { time: 'Sat', value: 48 }, { time: 'Sun', value: 55 },
+    ],
+    month: [
+      { time: 'W1', value: 45 }, { time: 'W2', value: 50 }, { time: 'W3', value: 58 }, { time: 'W4', value: 52 },
+    ],
+    year: [
+      { time: 'Jan', value: 30 }, { time: 'Feb', value: 32 }, { time: 'Mar', value: 28 }, { time: 'Apr', value: 35 },
+      { time: 'May', value: 40 }, { time: 'Jun', value: 45 }, { time: 'Jul', value: 42 }, { time: 'Aug', value: 50 },
+      { time: 'Sep', value: 55 }, { time: 'Oct', value: 62 }, { time: 'Nov', value: 58 }, { time: 'Dec', value: 60 },
+    ],
+};
+
+const statsData = {
+    today: {
+        average: { value: '42.1', unit: 'ppm', change: '+5.1%', type: 'increase' },
+        peak: { value: '55.0', unit: 'ppm', change: '+3.2%', type: 'increase' },
+        safe: { value: '6.2', unit: 'hrs', change: '-10.0%', type: 'decrease' },
+        alerts: { value: '1', unit: 'time', change: '0%', type: 'decrease' },
+    },
+    week: {
+        average: { value: '45.2', unit: 'ppm', change: '+8.7%', type: 'increase' },
+        peak: { value: '68.3', unit: 'ppm', change: '+15.2%', type: 'increase' },
+        safe: { value: '18.5', unit: 'hrs', change: '+18.5%', type: 'decrease' },
+        alerts: { value: '3', unit: 'times', change: '-15.8%', type: 'decrease' },
+    },
+    month: {
+        average: { value: '51.5', unit: 'ppm', change: '+12.3%', type: 'increase' },
+        peak: { value: '75.1', unit: 'ppm', change: '+20.1%', type: 'increase' },
+        safe: { value: '65.0', unit: 'hrs', change: '+12.5%', type: 'decrease' },
+        alerts: { value: '12', unit: 'times', change: '+5.0%', type: 'increase' },
+    },
+    year: {
+        average: { value: '48.9', unit: 'ppm', change: '+2.5%', type: 'increase' },
+        peak: { value: '80.5', unit: 'ppm', change: '+8.0%', type: 'increase' },
+        safe: { value: '2500', unit: 'hrs', change: '+5.0%', type: 'decrease' },
+        alerts: { value: '150', unit: 'times', change: '+2.1%', type: 'increase' },
+    },
+};
+
+type FilterType = 'today' | 'week' | 'month' | 'year';
 
 const deviceComparisonData = [
-    { name: 'Kitchen', value: 42, fill: 'var(--color-kitchen)' },
-    { name: 'Living Room', value: 38, fill: 'var(--color-living-room)' },
-    { name: 'Basement', value: 68, fill: 'var(--color-basement)' },
-    { name: 'Garage', value: 52, fill: 'var(--color-garage)' },
+    { name: 'Kitchen', value: 42 },
+    { name: 'Living Room', value: 38 },
+    { name: 'Basement', value: 68 },
+    { name: 'Garage', value: 52 },
 ];
   
 const deviceComparisonConfig = {
     value: {
         label: "Gas Level",
     },
-    kitchen: {
-        label: "Kitchen",
-        color: "#3b82f6",
-    },
-    'living-room': {
-        label: "Living Room",
-        color: "#10b981",
-    },
-    basement: {
-        label: "Basement",
-        color: "#ef4444",
-    },
-    garage: {
-        label: "Garage",
-        color: "#f97316",
-    },
+    'Kitchen': { label: "Kitchen", color: "hsl(var(--chart-1))" },
+    'Living Room': { label: "Living Room", color: "hsl(var(--chart-2))" },
+    'Basement': { label: "Basement", color: "hsl(var(--chart-3))" },
+    'Garage': { label: "Garage", color: "hsl(var(--chart-4))" },
 }
 
 function SmallStatCard({
@@ -142,7 +169,15 @@ function MonthlySummaryCard({ icon: Icon, iconColor, title, value, subtitle, car
 
 export default function StatisticsPage() {
     const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9, 1)); // October 2025
-    const [activeFilter, setActiveFilter] = useState('Week');
+    const [activeFilter, setActiveFilter] = useState<FilterType>('week');
+    
+    const [currentTrend, setCurrentTrend] = useState(trendData.week);
+    const [currentStats, setCurrentStats] = useState(statsData.week);
+
+    useEffect(() => {
+        setCurrentTrend(trendData[activeFilter]);
+        setCurrentStats(statsData[activeFilter]);
+    }, [activeFilter]);
 
     const dailyGasData: Record<string, number> = {
         '2025-10-01': 25, '2025-10-02': 35, '2025-10-03': 42, '2025-10-04': 38, '2025-10-05': 55,
@@ -208,12 +243,12 @@ export default function StatisticsPage() {
           </TabsList>
           <TabsContent value="analytics" className="space-y-4">
             <div className="flex justify-between items-center bg-muted p-1 rounded-full">
-              {['Today', 'Week', 'Month', 'Year'].map(filter => (
+              {(['today', 'week', 'month', 'year'] as FilterType[]).map(filter => (
                 <Button
                   key={filter}
                   variant={activeFilter === filter ? 'default' : 'ghost'}
                   onClick={() => setActiveFilter(filter)}
-                  className="w-full rounded-full"
+                  className="w-full rounded-full capitalize"
                 >
                   {filter}
                 </Button>
@@ -227,9 +262,9 @@ export default function StatisticsPage() {
                 <CardContent className="p-4">
                     <div className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={weeklyTrendData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <LineChart data={currentTrend} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
                                 <Tooltip
                                     contentStyle={{
@@ -264,37 +299,37 @@ export default function StatisticsPage() {
               <SmallStatCard
                 icon={BarChartHorizontal}
                 title="Average Level"
-                value="45.2"
-                unit="ppm"
-                change="+8.7%"
-                changeType="increase"
+                value={currentStats.average.value}
+                unit={currentStats.average.unit}
+                change={currentStats.average.change}
+                changeType={currentStats.average.type as 'increase' | 'decrease'}
                 iconBg="bg-blue-100 dark:bg-blue-900/50"
               />
               <SmallStatCard
                 icon={TrendingUp}
                 title="Peak Reading"
-                value="68.3"
-                unit="ppm"
-                change="+15.2%"
-                changeType="increase"
+                value={currentStats.peak.value}
+                unit={currentStats.peak.unit}
+                change={currentStats.peak.change}
+                changeType={currentStats.peak.type as 'increase' | 'decrease'}
                 iconBg="bg-orange-100 dark:bg-orange-900/50"
               />
               <SmallStatCard
                 icon={ShieldCheck}
                 title="Safe Hours"
-                value="18.5"
-                unit="hrs"
-                change="+18.5%"
-                changeType="decrease"
+                value={currentStats.safe.value}
+                unit={currentStats.safe.unit}
+                change={currentStats.safe.change}
+                changeType={currentStats.safe.type as 'increase' | 'decrease'}
                 iconBg="bg-green-100 dark:bg-green-900/50"
               />
               <SmallStatCard
                 icon={AlertTriangle}
                 title="Alerts"
-                value="3"
-                unit="times"
-                change="-15.8%"
-                changeType="decrease"
+                value={currentStats.alerts.value}
+                unit={currentStats.alerts.unit}
+                change={currentStats.alerts.change}
+                changeType={currentStats.alerts.type as 'increase' | 'decrease'}
                 iconBg="bg-yellow-100 dark:bg-yellow-900/50"
               />
             </div>
@@ -319,26 +354,26 @@ export default function StatisticsPage() {
                             />
                             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                                 {deviceComparisonData.map((entry) => (
-                                    <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                    <Cell key={`cell-${entry.name}`} fill={deviceComparisonConfig[entry.name as keyof typeof deviceComparisonConfig].color} />
                                 ))}
                             </Bar>
                         </BarChart>
                     </ChartContainer>
                     <div className="flex justify-center items-center flex-wrap gap-4 mt-4 text-xs">
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.kitchen.color}}></span>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.Kitchen.color}}></span>
                             <span>Kitchen Sensor (42.5 ppm)</span>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig['living-room'].color}}></span>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig['Living Room'].color}}></span>
                             <span>Living Room (38.2 ppm)</span>
                         </div>
                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.basement.color}}></span>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.Basement.color}}></span>
                             <span>Basement (68.3 ppm)</span>
                         </div>
                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.garage.color}}></span>
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.Garage.color}}></span>
                             <span>Garage (52.7 ppm)</span>
                         </div>
                     </div>
