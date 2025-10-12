@@ -38,8 +38,12 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
   const alertsRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'devices', params.id, 'alerts') : null, [firestore, user, params.id]);
   const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
 
-  if (isDeviceLoading || isAlertsLoading || !device || !alerts) {
+  if (isDeviceLoading || isAlertsLoading) {
     return <DeviceDetailLoading />;
+  }
+  
+  if (!device) {
+    return notFound();
   }
 
   const getAlertVariant = (type: string) => {
@@ -53,7 +57,7 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
     }
   };
 
-  const sortedAlerts = [...alerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const sortedAlerts = alerts ? [...alerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
   const latestAlert = sortedAlerts[0];
 
   return (
