@@ -10,7 +10,7 @@ import { AddDeviceDialog } from '@/components/add-device-dialog';
 import Link from 'next/link';
 import { Header } from '@/components/header';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
+import { collection, query, orderBy, limit, collectionGroup, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useMemo } from 'react';
