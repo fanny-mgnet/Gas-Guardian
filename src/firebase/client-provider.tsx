@@ -10,13 +10,13 @@ interface FirebaseClientProviderProps {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   // useMemo is appropriate here to ensure getSdks is called only once.
-  const { firebaseApp, auth, firestore } = useMemo(() => getSdks(), []);
+  const sdks = useMemo(() => getSdks(), []);
 
   return (
     <FirebaseProvider
-      firebaseApp={firebaseApp}
-      auth={auth}
-      firestore={firestore}
+      firebaseApp={sdks?.firebaseApp ?? null}
+      auth={sdks?.auth ?? null}
+      firestore={sdks?.firestore ?? null}
     >
       {children}
     </FirebaseProvider>
