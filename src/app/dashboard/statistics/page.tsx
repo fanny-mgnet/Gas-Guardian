@@ -17,6 +17,8 @@ import {
   AlertCircle,
   Shield,
   ShieldAlert,
+  BarChartHorizontal,
+  TrendingDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,32 +32,23 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  LineChart,
+  Line,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Calendar } from '@/components/ui/calendar';
 import { format, addMonths, subMonths } from 'date-fns';
 
-const deviceComparisonData = [
-  { name: 'Kitchen', value: 42, color: 'hsl(var(--chart-1))' },
-  { name: 'Living Room', value: 38, color: 'hsl(var(--chart-3))' },
-  { name: 'Basement', value: 65, color: 'hsl(var(--destructive))' },
-  { name: 'Garage', value: 52, color: 'hsl(var(--chart-2))' },
-];
-
-function BigStatCard({ title, value, unit }: { title: string, value: string, unit: string }) {
-    return (
-        <Card className="shadow-sm flex-1">
-            <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">{title}</p>
-                <p className="text-3xl font-bold">
-                    {value}
-                    <span className="text-xl font-medium text-muted-foreground ml-1">{unit}</span>
-                </p>
-            </CardContent>
-        </Card>
-    );
-}
+const weeklyTrendData = [
+    { day: 'Mon', value: 35 },
+    { day: 'Tue', value: 42 },
+    { day: 'Wed', value: 38 },
+    { day: 'Thu', value: 45 },
+    { day: 'Fri', value: 51 },
+    { day: 'Sat', value: 48 },
+    { day: 'Sun', value: 55 },
+];  
 
 function SmallStatCard({
   icon: Icon,
@@ -64,6 +57,7 @@ function SmallStatCard({
   unit,
   change,
   changeType,
+  iconBg,
 }: {
   icon: React.ElementType;
   title: string;
@@ -71,26 +65,27 @@ function SmallStatCard({
   unit: string;
   change: string;
   changeType: 'increase' | 'decrease';
+  iconBg?: string;
 }) {
   return (
     <Card className="shadow-sm flex-1">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
-            <div className="bg-primary/10 text-primary p-2 rounded-lg">
+            <div className={cn("text-primary p-2 rounded-lg", iconBg || 'bg-primary/10')}>
                 <Icon className="h-5 w-5" />
             </div>
             <div
                 className={cn(
                 'flex items-center text-xs font-semibold px-2 py-1 rounded-full',
                 changeType === 'increase'
-                    ? 'bg-green-100 text-green-600'
-                    : 'bg-red-100 text-red-600'
+                    ? 'bg-red-100 text-red-600'
+                    : 'bg-green-100 text-green-600'
                 )}
             >
                 {changeType === 'increase' ? (
-                <ArrowUp className="h-3 w-3 mr-1" />
-                ) : (
                 <TrendingUp className="h-3 w-3 mr-1" />
+                ) : (
+                <TrendingDown className="h-3 w-3 mr-1" />
                 )}
                 {change}
             </div>
@@ -105,18 +100,6 @@ function SmallStatCard({
       </CardContent>
     </Card>
   );
-}
-
-function LegendItem({ color, label, value }: { color: string, label: string, value: string }) {
-    return (
-        <Button variant="outline" className="h-auto py-2 px-3 border-2 rounded-lg" style={{ borderColor: color }}>
-            <span className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: color }}></span>
-            <div className="flex flex-col items-start">
-                <span className="text-xs text-muted-foreground">{label}</span>
-                <span className="font-bold text-sm text-foreground">{value}</span>
-            </div>
-        </Button>
-    )
 }
 
 function MonthlySummaryCard({ icon: Icon, iconColor, title, value, subtitle, cardClass }: { icon: React.ElementType, iconColor?: string, title: string, value: string, subtitle: string, cardClass?: string }) {
@@ -211,62 +194,84 @@ export default function StatisticsPage() {
               ))}
             </div>
 
-            <div className="flex gap-4">
-                <BigStatCard title="Average Level" value="32.5" unit="ppm" />
-                <BigStatCard title="Peak Reading" value="52.8" unit="ppm" />
-            </div>
-
-            <div className="flex gap-4">
-              <SmallStatCard
-                icon={ShieldCheck}
-                title="Safe Hours"
-                value="18.5"
-                unit="hrs"
-                change="+12.3%"
-                changeType="increase"
-              />
-              <SmallStatCard
-                icon={AlertTriangle}
-                title="Alerts"
-                value="3"
-                unit="times"
-                change="-25.0%"
-                changeType="decrease"
-              />
-            </div>
-            
             <Card className="shadow-sm">
+                <CardHeader>
+                    <CardTitle>Gas Level Trend</CardTitle>
+                </CardHeader>
                 <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold mb-2">Device Comparison</h3>
                     <div className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={deviceComparisonData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                            <LineChart data={weeklyTrendData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: 'hsl(var(--background))',
                                         border: '1px solid hsl(var(--border))',
                                         borderRadius: 'var(--radius)',
                                     }}
-                                    cursor={{fill: 'hsla(var(--muted-foreground), 0.1)'}}
+                                    cursor={{stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: "3 3"}}
                                 />
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {deviceComparisonData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
+                                <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} activeDot={{ r: 6 }}/>
+                            </LineChart>
                         </ResponsiveContainer>
                     </div>
-                     <div className="flex justify-around items-center flex-wrap gap-2 mt-4 text-xs">
-                        <LegendItem color="hsl(var(--chart-1))" label="Kitchen Sensor" value="42.5 ppm" />
-                        <LegendItem color="hsl(var(--chart-3))" label="Living Room" value="38.2 ppm" />
-                        <LegendItem color="hsl(var(--destructive))" label="Basement" value="65.1 ppm" />
+                     <div className="flex justify-center items-center flex-wrap gap-4 mt-4 text-xs">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+                            <span>Safe</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="h-2.5 w-2.5 rounded-full bg-primary"></span>
+                            <span>Warning</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="h-2.5 w-2.5 rounded-full bg-destructive"></span>
+                            <span>Danger</span>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
+
+            <div className="grid grid-cols-2 gap-4">
+              <SmallStatCard
+                icon={BarChartHorizontal}
+                title="Average Level"
+                value="45.2"
+                unit="ppm"
+                change="+8.7%"
+                changeType="increase"
+                iconBg="bg-blue-100 dark:bg-blue-900/50"
+              />
+              <SmallStatCard
+                icon={TrendingUp}
+                title="Peak Reading"
+                value="68.3"
+                unit="ppm"
+                change="+15.2%"
+                changeType="increase"
+                iconBg="bg-orange-100 dark:bg-orange-900/50"
+              />
+              <SmallStatCard
+                icon={ShieldCheck}
+                title="Safe Hours"
+                value="18.5"
+                unit="hrs"
+                change="+18.5%"
+                changeType="decrease"
+                iconBg="bg-green-100 dark:bg-green-900/50"
+              />
+              <SmallStatCard
+                icon={AlertTriangle}
+                title="Alerts"
+                value="3"
+                unit="times"
+                change="-15.8%"
+                changeType="decrease"
+                iconBg="bg-yellow-100 dark:bg-yellow-900/50"
+              />
+            </div>
 
           </TabsContent>
           <TabsContent value="calendar" className="space-y-4">
