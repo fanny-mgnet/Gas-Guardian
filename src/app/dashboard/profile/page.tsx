@@ -25,7 +25,11 @@ import {
     Shield,
     Lock,
     KeyRound,
-    MonitorSmartphone
+    MonitorSmartphone,
+    SlidersHorizontal,
+    Sun,
+    Scale,
+    Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -141,6 +145,9 @@ export default function ProfilePage() {
         dataUsage: '2.3 GB',
         twoFactorEnabled: false,
         activeSessions: 3,
+        isMetricUnits: true,
+        language: 'English',
+        theme: 'Light Mode',
     };
 
     const editButton = (
@@ -217,7 +224,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                     <SectionHeader icon={Shield} title="Security" subtitle="Protect your account" />
                     <div className="space-y-2">
                         <SettingsItem 
@@ -236,6 +243,30 @@ export default function ProfilePage() {
                             icon={MonitorSmartphone} 
                             title="Active Sessions" 
                             subtitle={`${user.activeSessions} active sessions`} 
+                            onTap={() => {}}
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <SectionHeader icon={SlidersHorizontal} title="App Preferences" subtitle="Customize your experience" />
+                    <div className="space-y-2">
+                        <SettingsItem 
+                            icon={Sun} 
+                            title="Theme" 
+                            subtitle={user.theme} 
+                            trailing={<Switch />}
+                        />
+                        <SettingsItem 
+                            icon={Scale} 
+                            title="Measurement Units" 
+                            subtitle="Metric (°C, kg)" 
+                            trailing={<Switch defaultChecked={user.isMetricUnits} />}
+                        />
+                        <SettingsItem 
+                            icon={Globe} 
+                            title="Language" 
+                            subtitle={user.language} 
                             onTap={() => {}}
                         />
                     </div>
