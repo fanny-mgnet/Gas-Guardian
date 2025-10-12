@@ -1,3 +1,4 @@
+
 import {
     Card,
     CardContent,
@@ -15,11 +16,19 @@ import {
     Camera,
     CheckCircle2,
     ChevronRight,
-    Star
+    Star,
+    Settings,
+    CreditCard,
+    Smartphone,
+    Database,
+    Shield,
+    Lock,
+    KeyRound,
+    MonitorSmartphone
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 function InfoCard({
     icon: Icon,
@@ -83,12 +92,14 @@ function SettingsItem({
     iconBg,
     title,
     subtitle,
+    trailing,
     onTap,
   }: {
     icon: React.ElementType;
     iconBg?: string;
     title: string;
     subtitle?: string;
+    trailing?: React.ReactNode;
     onTap?: () => void;
   }) {
     const content = (
@@ -101,8 +112,9 @@ function SettingsItem({
             <p className="font-semibold">{title}</p>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          <div className="ml-auto pl-2">
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          <div className="ml-auto pl-2 flex items-center gap-4">
+            {trailing}
+            {onTap && <ChevronRight className="h-5 w-5 text-muted-foreground" />}
           </div>
         </CardContent>
       </Card>
@@ -123,6 +135,11 @@ export default function ProfilePage() {
         emergencyContact: '+1 555-0456',
         accountCreated: 'January 15, 2024',
         isEmailVerified: true,
+        subscription: 'Premium Plan',
+        connectedDevices: 5,
+        dataUsage: '2.3 GB',
+        twoFactorEnabled: false,
+        activeSessions: 3,
     };
 
     const editButton = (
@@ -169,13 +186,63 @@ export default function ProfilePage() {
                     <InfoCard icon={Calendar} label="Account Created" value={user.accountCreated} />
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                     <SectionHeader icon={User} title="Personal Information" subtitle="Manage your personal details" />
                     <div className="space-y-2">
-                        <SettingsItem icon={Star} title="Emergency Contact" subtitle={user.emergencyContact} iconBg="bg-red-100" />
+                        <SettingsItem icon={Star} title="Emergency Contact" subtitle={user.emergencyContact} iconBg="bg-red-100" onTap={() => {}}/>
                     </div>
                 </div>
+                
+                <div className="space-y-4 mb-6">
+                    <SectionHeader icon={Settings} title="Account Settings" subtitle="Subscription and device information" />
+                    <div className="space-y-2">
+                        <SettingsItem 
+                            icon={CreditCard} 
+                            title="Subscription Status" 
+                            subtitle={user.subscription}
+                            trailing={<Badge variant="secondary" className="bg-blue-100 text-blue-800 border-none">Active</Badge>}
+                        />
+                        <SettingsItem 
+                            icon={Smartphone} 
+                            title="Connected Devices" 
+                            subtitle={`${user.connectedDevices} devices connected`}
+                            onTap={() => {}}
+                        />
+                        <SettingsItem 
+                            icon={Database} 
+                            title="Data Usage" 
+                            subtitle={`Monthly usage: ${user.dataUsage}`}
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <SectionHeader icon={Shield} title="Security" subtitle="Protect your account" />
+                    <div className="space-y-2">
+                        <SettingsItem 
+                            icon={Lock} 
+                            title="Change Password" 
+                            subtitle="Update your account password" 
+                            onTap={() => {}} 
+                        />
+                        <SettingsItem 
+                            icon={KeyRound} 
+                            title="Two-Factor Authentication" 
+                            subtitle={user.twoFactorEnabled ? 'Enabled' : 'Disabled'} 
+                            trailing={<Switch checked={user.twoFactorEnabled} />}
+                        />
+                        <SettingsItem 
+                            icon={MonitorSmartphone} 
+                            title="Active Sessions" 
+                            subtitle={`${user.activeSessions} active sessions`} 
+                            onTap={() => {}}
+                        />
+                    </div>
+                </div>
+
             </div>
         </div>
     );
 }
+
+    
