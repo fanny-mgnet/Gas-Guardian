@@ -11,9 +11,11 @@ import { User, Mail, Phone, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { doc, setDoc } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
 
 function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { icon: React.ElementType, id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
@@ -27,12 +29,14 @@ function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { ic
 export default function RegisterPage() {
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
-  // Other fields can be added here if needed for Firestore profile
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -49,7 +53,7 @@ export default function RegisterPage() {
       })
       return;
     }
-    if (!auth) {
+    if (!auth || !firestore) {
         toast({
             variant: 'destructive',
             title: 'Registration Failed',
@@ -59,7 +63,24 @@ export default function RegisterPage() {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const createdUser = userCredential.user;
+
+      // Update user profile with display name
+      await updateProfile(createdUser, {
+        displayName: fullName,
+      });
+
+      // Create a user document in Firestore
+      const userRef = doc(firestore, 'users', createdUser.uid);
+      await setDoc(userRef, {
+        id: createdUser.uid,
+        email: createdUser.email,
+        createdAt: new Date().toISOString(),
+        displayName: fullName,
+        phoneNumber: phone,
+      });
+      
       // Let the useEffect handle the redirect
     } catch (error: any) {
        toast({
@@ -88,9 +109,9 @@ export default function RegisterPage() {
 
         <Card className="bg-card/90 backdrop-blur-sm text-card-foreground border-white/20">
           <CardContent className="p-6 space-y-4">
-            <InputField icon={User} id="fullname" type="text" placeholder="Full Name" value={''} onChange={() => {}} />
+            <InputField icon={User} id="fullname" type="text" placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             <InputField icon={Mail} id="email" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <InputField icon={Phone} id="phone" type="tel" placeholder="Mobile Number (Optional)" value={''} onChange={() => {}} />
+            <InputField icon={Phone} id="phone" type="tel" placeholder="Mobile Number (Optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <InputField icon={Lock} id="password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <InputField icon={Lock} id="confirm-password" type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </CardContent>
