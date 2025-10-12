@@ -1,5 +1,4 @@
 import React from 'react';
-import { Header } from '@/components/header';
 import { BottomNav } from '@/components/bottom-nav';
 
 export default function DashboardLayout({
@@ -9,8 +8,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-1 p-4 sm:p-6 pb-20">{children}</main>
+      <main className="flex-1 pb-20">{children}</main>
       <BottomNav />
     </div>
   );
