@@ -59,8 +59,7 @@ function DevicesLoading() {
 
 export default function DevicesPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
-  const devicesRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'devices') : null, [firestore, user]);
+  const devicesRef = useMemoFirebase(() => (firestore) ? collection(firestore, 'devices') : null, [firestore]);
   const { data: devices, isLoading } = useCollection<Device>(devicesRef);
 
   if (isLoading) {

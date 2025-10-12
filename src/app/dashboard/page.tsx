@@ -71,17 +71,16 @@ function DashboardLoading() {
 
 export default function Dashboard() {
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const devicesRef = useMemoFirebase(() => 
-    (firestore && user) ? collection(firestore, 'devices') : null, 
-    [firestore, user]
+    (firestore) ? collection(firestore, 'devices') : null, 
+    [firestore]
   );
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemoFirebase(() => 
-    (firestore && user) ? query(collectionGroup(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50)) : null, 
-    [firestore, user]
+    (firestore) ? query(collectionGroup(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50)) : null, 
+    [firestore]
   );
   const { data: allAlerts, isLoading: alertsLoading } = useCollection<Alert>(alertsQuery);
 

@@ -8,6 +8,7 @@ export type Device = {
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   isActive: boolean;
+  userId: string;
 };
 
 export type Alert = {

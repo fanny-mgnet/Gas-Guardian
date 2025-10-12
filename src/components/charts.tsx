@@ -32,8 +32,8 @@ const chartConfig = {
 
 export function GasLevelChart({ alerts }: GasLevelChartProps) {
     const chartData = alerts.map(alert => ({
-        date: format(new Date(alert.created_at), 'MMM d, HH:mm'),
-        gas_value: alert.sensor_data.gas_value,
+        date: format(new Date(alert.createdAt), 'MMM d, HH:mm'),
+        gas_value: JSON.parse(alert.sensorData).gas_value,
     })).reverse(); // reverse to show oldest first
 
   return (
