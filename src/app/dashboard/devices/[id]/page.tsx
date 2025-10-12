@@ -31,25 +31,25 @@ import { useMemo } from 'react';
 
 export default function DeviceDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const deviceRef = useMemo(() => {
-    if (firestore && user) {
+    if (firestore) {
       return doc(firestore, 'devices', params.id);
     }
     return null;
-  }, [firestore, user, params.id]);
+  }, [firestore, params.id]);
   const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
 
   const alertsRef = useMemo(() => {
-    if (firestore && user) {
+    if (firestore) {
       return collection(firestore, 'devices', params.id, 'alerts');
     }
     return null;
-  }, [firestore, user, params.id]);
+  }, [firestore, params.id]);
   const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
 
-  if (isDeviceLoading || isAlertsLoading || !user) {
+  if (isDeviceLoading || isAlertsLoading || isUserLoading) {
     return <DeviceDetailLoading />;
   }
   

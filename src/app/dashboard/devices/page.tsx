@@ -60,17 +60,18 @@ function DevicesLoading() {
 
 export default function DevicesPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+
   const devicesRef = useMemo(() => {
-    if (firestore && user) {
+    if (firestore) {
       return collection(firestore, 'devices');
     }
     return null;
-  }, [firestore, user]);
+  }, [firestore]);
 
   const { data: devices, isLoading } = useCollection<Device>(devicesRef);
 
-  if (isLoading || !user) {
+  if (isLoading || isUserLoading) {
     return <DevicesLoading />;
   }
 
