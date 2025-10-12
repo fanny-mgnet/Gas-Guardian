@@ -1,0 +1,89 @@
+/**
+ * @file Firestore Security Rules for SmartGas Guardian
+ * @description This ruleset enforces a hybrid security model that allows open device registration but restricts modifications to authenticated users or the device itself. User data is protected behind owner-only access.
+ *
+ * Data Structure:
+ * - /devices/{deviceId}: Stores device information. Device registration is open, but updates are restricted.
+ * - /devices/{deviceId}/alerts/{alertId}: Stores alerts associated with a device. Accessible only to the authenticated user.
+ * - /users/{userId}: Stores user information. Access is restricted to the owning user.
+ *
+ * Key Security Decisions:
+ * - Device registration is open to all, simulating device self-registration.
+ * - Device updates are restricted to authenticated users.
+ * - User data is strictly private (owner-only access).
+ * - Listing of devices is open to all.
+ * - Listing of alerts is restricted to authenticated users.
+ *
+ * Denormalization for Authorization:
+ * - Alerts include the `deviceId` field to allow direct authorization checks without needing to query the parent device document.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to device documents. Device registration is open to all, but updates are restricted to authenticated users.
+     * @path /devices/{deviceId}
+     * @allow get, list: Allows public read access to device information.
+     * @allow create: Allows anyone to create a device document. Simulates device self-registration.
+     * @allow update: Allows authenticated users to update device information.
+     * @allow delete: Denies deletion of device documents.
+     * @principle Allows open device registration, but restricts updates to authenticated users.
+     */
+    match /devices/{deviceId} {
+      allow get, list: if true;
+      allow create: if true;
+      allow update: if isSignedIn();
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to alert documents associated with a device.
+     * @path /devices/{deviceId}/alerts/{alertId}
+     * @allow get: Allows retrieval of a specific alert if the user is authenticated.
+     * @allow list: Allows listing of alerts for a device if the user is authenticated.
+     * @allow create: Allows creation of alerts if the user is authenticated and the deviceId matches the parent path.
+     * @allow update: Allows updating of alerts if the user is authenticated.
+     * @allow delete: Allows deletion of alerts if the user is authenticated.
+     * @principle Enforces authenticated access to device alerts.
+     */
+    match /devices/{deviceId}/alerts/{alertId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.deviceId == deviceId;
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Controls access to user documents. Access is restricted to the owning user.
+     * @path /users/{userId}
+     * @allow get: Allows the owner to retrieve their own user document.
+     * @allow list: Denies listing of user documents.
+     * @allow create: Allows a user to create their own user document if the userId matches their auth UID.
+     * @allow update: Allows the owner to update their own user document.
+     * @allow delete: Allows the owner to delete their own user document.
+     * @principle Enforces strict user-ownership for all user data.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isExistingOwner(userId) {
+    return isOwner(userId) && resource != null;
+  }
+}
