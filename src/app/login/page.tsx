@@ -11,9 +11,18 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package2 } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
+
+function InputField({ icon: Icon, id, type, placeholder }: { icon: React.ElementType, id: string, type: string, placeholder: string }) {
+    return (
+        <div className="relative flex items-center">
+            <Icon className="absolute left-3 h-5 w-5 text-muted-foreground" />
+            <Input id={id} type={type} placeholder={placeholder} className="pl-10 h-12" />
+        </div>
+    );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,42 +32,36 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="items-center text-center">
-            <div className="flex items-center gap-2 mb-2">
-                <Package2 className="h-8 w-8" />
-                <CardTitle className="text-2xl">SmartGas Guardian</CardTitle>
+    <div className="flex items-center justify-center min-h-screen auth-gradient text-white">
+      <div className="w-full max-w-md p-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold">Welcome Back</h1>
+          <p className="text-white/80">Sign in to your SmartGas Guardian account</p>
+        </div>
+
+        <Card className="bg-card/90 backdrop-blur-sm text-card-foreground border-white/20">
+          <CardContent className="p-6 space-y-4">
+              <InputField icon={Mail} id="email" type="email" placeholder="Email" />
+              <div className="space-y-2">
+                <InputField icon={Lock} id="password" type="password" placeholder="Password" />
+                <div className="flex items-center">
+                    <a href="#" className="ml-auto inline-block text-sm text-muted-foreground hover:text-primary">
+                        Forgot your password?
+                    </a>
+                </div>
+              </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4 p-6 pt-0">
+            <Button className="w-full h-12 text-base" onClick={handleLogin}>Sign In</Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <Link href="/register" className="font-semibold text-primary hover:underline">
+                Sign Up
+              </Link>
             </div>
-          <CardDescription>
-            Enter your credentials to access your dashboard.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" required />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-              <a href="#" className="ml-auto inline-block text-sm underline">
-                Forgot your password?
-              </a>
-            </div>
-            <Input id="password" type="password" required />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full" onClick={handleLogin}>Sign in</Button>
-          <div className="text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="underline">
-              Sign up
-            </Link>
-          </div>
-        </CardFooter>
-      </Card>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
