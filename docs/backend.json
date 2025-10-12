@@ -95,7 +95,11 @@
         },
         "alertType": {
           "type": "string",
-          "enum": ["gas_emergency", "gas_warning", "gas_normal"],
+          "enum": [
+            "gas_emergency",
+            "gas_warning",
+            "gas_normal"
+          ],
           "description": "Type of alert (e.g., gas_emergency, gas_warning, gas_normal)."
         },
         "message": {
@@ -131,26 +135,23 @@
     ]
   },
   "firestore": {
-    "collections": [
-      {
-        "path": "/users/{userId}",
-        "schema": { "$ref": "#/entities/User" },
-        "description": "Stores user profile information. The document ID is the user's UID from Firebase Authentication.",
-        "collections": [
-          {
-            "path": "devices",
-            "schema": { "$ref": "#/entities/Device" },
-            "description": "A subcollection containing the devices owned by the user.",
-            "collections": [
-              {
-                "path": "alerts",
-                "schema": { "$ref": "#/entities/Alert" },
-                "description": "A subcollection containing alerts for a specific device."
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profile information. The document ID is the user's UID from Firebase Authentication."
+    },
+    "/users/{userId}/devices/{deviceId}": {
+      "schema": {
+        "$ref": "#/entities/Device"
+      },
+      "description": "A subcollection containing the devices owned by the user."
+    },
+    "/users/{userId}/devices/{deviceId}/alerts/{alertId}": {
+      "schema": {
+        "$ref": "#/entities/Alert"
+      },
+      "description": "A subcollection containing alerts for a specific device."
+    }
   }
 }

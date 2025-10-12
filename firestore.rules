@@ -1,104 +1,120 @@
+/**
+ * @fileoverview Firestore Security Rules for SmartGas Guardian.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for all data. Each user can only
+ * access their own data, including user profiles, devices, and alerts. No user data
+ * is publicly accessible.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profile information. The {userId} MUST match the
+ *   authenticated user's UID.
+ * - /users/{userId}/devices/{deviceId}: Stores device information for a specific user.
+ * - /users/{userId}/devices/{deviceId}/alerts/{alertId}: Stores alerts for a specific
+ *   device owned by a specific user.
+ *
+ * Key Security Decisions:
+ * - User listing is disallowed to protect user privacy.
+ * - All write operations require authentication and ownership validation.
+ * - The 'userId' field is denormalized onto the Device and Alert documents to allow simple,
+ *   performant security rules without requiring additional reads.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secure user profiles at /users/{userId}.
-     * @path /users/{userId}
-     * @allow (create) - User with UID 'user123' can create their own profile document.
-     * @allow (get) - User with UID 'user123' can read their own profile document.
-     * @allow (update) - User with UID 'user123' can update their own profile document.
-     * @allow (delete) - User with UID 'user123' can delete their own profile document.
-     * @deny (create) - User with UID 'user456' cannot create a profile document for 'user123'.
-     * @deny (get) - User with UID 'user456' cannot read the profile document for 'user123'.
+     * @description Protects the /users/{userId} collection.
+     * @path /databases/{database}/documents/users/{userId}
+     * @allow (create) User with UID 'user123' can create their own profile.
+     *    auth.uid: 'user123'
+     *    request.resource.data.id: 'user123'
+     * @allow (get) User with UID 'user123' can get their own profile.
+     *    auth.uid: 'user123'
+     * @allow (update) User with UID 'user123' can update their own profile.
+     *    auth.uid: 'user123'
+     * @allow (delete) User with UID 'user123' can delete their own profile.
+     *    auth.uid: 'user123'
+     * @deny (create) User with UID 'user123' cannot create a profile for 'user456'.
+     *    auth.uid: 'user123'
+     *    request.resource.data.id: 'user456'
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      // Check if the user is signed in
+      // Helper function to check if the user is signed in
       function isSignedIn() {
         return request.auth != null;
       }
 
-      // Check if the requested userId matches the authenticated user's UID.
+      // Helper function to check if the authenticated user is the owner of the document.
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
 
-      // Check if the requested userId matches the authenticated user's UID and resource exists.
+      //Helper function to check if the authenticated user is the existing owner of the document
       function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
-        allow get: if isSignedIn() && isOwner(userId);
-        allow list: if false;
-        allow create: if isSignedIn() && isOwner(userId);
-        allow update: if isSignedIn() && isExistingOwner(userId);
-        allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
 
-    /**
-     * @description Secure device documents at /users/{userId}/devices/{deviceId}.
-     * @path /users/{userId}/devices/{deviceId}
-     * @allow (create) - User with UID 'user123' can create a device document under their ID.
-     * @allow (get) - User with UID 'user123' can read a device document under their ID.
-     * @allow (update) - User with UID 'user123' can update a device document under their ID.
-     * @allow (delete) - User with UID 'user123' can delete a device document under their ID.
-     * @deny (create) - User with UID 'user456' cannot create a device document under 'user123'.
-     * @deny (get) - User with UID 'user456' cannot read a device document under 'user123'.
-     * @principle Enforces document ownership and validates relational integrity on create.
-     */
-    match /users/{userId}/devices/{deviceId} {
-       // Check if the user is signed in
-      function isSignedIn() {
-        return request.auth != null;
-      }
+      allow get: if isOwner(userId);
+      allow list: if false;
 
-      // Check if the requested userId matches the authenticated user's UID.
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
 
-      // Check if the requested userId matches the authenticated user's UID and resource exists.
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-        allow get: if isSignedIn() && isOwner(userId);
-        allow list: if false;
-        allow create: if isSignedIn() && isOwner(userId);
-        allow update: if isSignedIn() && isExistingOwner(userId);
-        allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
+       /**
+         * @description Protects the /users/{userId}/devices collection.
+         * @path /databases/{database}/documents/users/{userId}/devices/{deviceId}
+         * @allow (create) User with UID 'user123' can create a device in their devices collection.
+         *    auth.uid: 'user123'
+         *    request.resource.data.userId: 'user123'
+         * @allow (get) User with UID 'user123' can get a device in their devices collection.
+         *    auth.uid: 'user123'
+         * @allow (update) User with UID 'user123' can update a device in their devices collection.
+         *    auth.uid: 'user123'
+         * @allow (delete) User with UID 'user123' can delete a device in their devices collection.
+         *    auth.uid: 'user123'
+         * @deny (create) User with UID 'user123' cannot create a device in 'user456's devices collection.
+         *    auth.uid: 'user123'
+         *    request.resource.data.userId: 'user456'
+         * @principle Enforces document ownership for all operations on devices subcollection.
+         */
+      match /devices/{deviceId} {
 
-    /**
-     * @description Secure alert documents at /users/{userId}/devices/{deviceId}/alerts/{alertId}.
-     * @path /users/{userId}/devices/{deviceId}/alerts/{alertId}
-     * @allow (create) - User with UID 'user123' can create an alert document under their device.
-     * @allow (get) - User with UID 'user123' can read an alert document under their device.
-     * @allow (update) - User with UID 'user123' can update an alert document under their device.
-     * @allow (delete) - User with UID 'user123' can delete an alert document under their device.
-     * @deny (create) - User with UID 'user456' cannot create an alert document under 'user123'.
-     * @deny (get) - User with UID 'user456' cannot read an alert document under 'user123'.
-     * @principle Enforces document ownership and validates relational integrity.
-     */
-    match /users/{userId}/devices/{deviceId}/alerts/{alertId} {
-       // Check if the user is signed in
-      function isSignedIn() {
-        return request.auth != null;
-      }
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
 
-      // Check if the requested userId matches the authenticated user's UID.
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+        allow delete: if isExistingOwner(userId) && resource.data.userId == userId;
 
-      // Check if the requested userId matches the authenticated user's UID and resource exists.
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+         /**
+           * @description Protects the /users/{userId}/devices/{deviceId}/alerts collection.
+           * @path /databases/{database}/documents/users/{userId}/devices/{deviceId}/alerts/{alertId}
+           * @allow (create) User with UID 'user123' can create an alert in their device's alerts collection.
+           *    auth.uid: 'user123'
+           *    request.resource.data.userId: 'user123'
+           * @allow (get) User with UID 'user123' can get an alert in their device's alerts collection.
+           *    auth.uid: 'user123'
+           * @allow (update) User with UID 'user123' can update an alert in their device's alerts collection.
+           *    auth.uid: 'user123'
+           * @allow (delete) User with UID 'user123' can delete an alert in their device's alerts collection.
+           *    auth.uid: 'user123'
+           * @deny (create) User with UID 'user123' cannot create an alert in 'user456's device's alerts collection.
+           *    auth.uid: 'user123'
+           *    request.resource.data.userId: 'user456'
+           * @principle Enforces document ownership for all operations on alerts subcollection.
+           */
+        match /alerts/{alertId} {
+          allow get: if isOwner(userId);
+          allow list: if isOwner(userId);
+
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+          allow delete: if isExistingOwner(userId) && resource.data.userId == userId;
+        }
       }
-        allow get: if isSignedIn() && isOwner(userId);
-        allow list: if false;
-        allow create: if isSignedIn() && isOwner(userId);
-        allow update: if isSignedIn() && isExistingOwner(userId);
-        allow delete: if isSignedIn() && isExistingOwner(userId);
     }
   }
 }
