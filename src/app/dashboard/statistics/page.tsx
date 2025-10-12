@@ -14,7 +14,9 @@ import {
   ChevronRight,
   Flame,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Shield,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -27,6 +29,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Cell,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -116,16 +119,13 @@ function LegendItem({ color, label, value }: { color: string, label: string, val
     )
 }
 
-function MonthlySummaryCard({ icon: Icon, iconColor, title, value, footer }: { icon: React.ElementType, iconColor: string, title: string, value: string, footer: string }) {
+function MonthlySummaryCard({ icon: Icon, iconColor, title, value, subtitle, cardClass }: { icon: React.ElementType, iconColor?: string, title: string, value: string, subtitle: string, cardClass?: string }) {
     return (
-        <Card className="flex-1">
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                    <Icon className={cn("h-5 w-5", iconColor)} />
-                </div>
+        <Card className={cn("flex-1 text-center", cardClass)}>
+            <CardContent className="p-4 flex flex-col items-center justify-center">
+                <Icon className={cn("h-6 w-6 mb-2", iconColor)} />
                 <p className="text-2xl font-bold">{value}</p>
-                <p className="text-xs text-muted-foreground">{footer}</p>
+                <p className="text-xs text-muted-foreground">{subtitle}</p>
             </CardContent>
         </Card>
     );
@@ -241,7 +241,7 @@ export default function StatisticsPage() {
                                 />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                                     {deviceComparisonData.map((entry, index) => (
-                                        <rect key={`cell-${index}`} x={entry.value} y={entry.value} width={entry.value} height={entry.value} fill={entry.color} />
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -303,29 +303,31 @@ export default function StatisticsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Monthly Summary</CardTitle>
-                    <CardDescription>Overview for {format(currentMonth, 'MMMM')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex gap-4">
                     <MonthlySummaryCard
-                        icon={CheckCircle2}
+                        icon={Shield}
                         iconColor="text-green-500"
                         title="Safe Days"
-                        value="23"
-                        footer="Below threshold"
+                        value="18"
+                        subtitle="Safe Days"
+                        cardClass="bg-green-500/10 border-green-500/20"
                     />
                      <MonthlySummaryCard
-                        icon={AlertCircle}
+                        icon={ShieldAlert}
                         iconColor="text-yellow-500"
                         title="Warning Days"
-                        value="5"
-                        footer="Moderate levels"
+                        value="8"
+                        subtitle="Warning Days"
+                        cardClass="bg-yellow-500/10 border-yellow-500/20"
                     />
                      <MonthlySummaryCard
-                        icon={Flame}
+                        icon={AlertTriangle}
                         iconColor="text-red-500"
-                        title="Danger Days"
-                        value="3"
-                        footer="High level alerts"
+                        title="High Risk Days"
+                        value="4"
+                        subtitle="High Risk Days"
+                        cardClass="bg-red-500/10 border-red-500/20"
                     />
                 </CardContent>
             </Card>
