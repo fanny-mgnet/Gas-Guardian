@@ -36,6 +36,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 function InfoCard({
     icon: Icon,
@@ -135,6 +136,7 @@ function SettingsItem({
 
 export default function ProfilePage() {
     const { toast } = useToast();
+    const router = useRouter();
     const userAvatarLg = PlaceHolderImages.find(p => p.id === 'user-avatar-lg');
     const user = {
         name: 'Sarah Johnson',
@@ -158,6 +160,7 @@ export default function ProfilePage() {
             title: 'Logged Out',
             description: 'You have been successfully logged out.',
         });
+        router.push('/login');
     };
 
     const handleNotImplemented = (feature: string) => {

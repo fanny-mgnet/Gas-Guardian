@@ -1,3 +1,5 @@
+'use client';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,9 +13,22 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Package2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export function Header() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
+    const router = useRouter();
+    const { toast } = useToast();
+
+    const handleLogout = () => {
+        toast({
+            title: 'Logged Out',
+            description: 'You have been successfully logged out.',
+        });
+        router.push('/login');
+    };
+
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
             <div className="flex items-center gap-2 font-bold">
@@ -49,7 +64,7 @@ export function Header() {
                     <Link href="/dashboard/support">Support</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         </header>
