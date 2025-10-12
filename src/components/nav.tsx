@@ -7,7 +7,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, HardHat, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, HardHat, BarChart2, User } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -29,6 +29,12 @@ export const navItems = [
         label: 'Statistics',
         icon: BarChart2,
         isActive: (pathname: string) => pathname.startsWith('/dashboard/statistics'),
+    },
+    {
+        href: '/dashboard/profile',
+        label: 'Profile',
+        icon: User,
+        isActive: (pathname: string) => pathname.startsWith('/dashboard/profile'),
     },
 ];
 
