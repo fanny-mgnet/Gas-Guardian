@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   TrendingUp,
+  ArrowUp,
   ArrowDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
