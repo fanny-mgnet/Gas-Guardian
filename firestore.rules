@@ -85,20 +85,20 @@ service cloud.firestore {
         return request.auth != null;
       }
 
-      /**
-       * Checks if the owner exists before allowing the write.
-       * @param {string} userId - The user ID from the path.
-       * @return {bool} - True if the user is the owner and the resource exists, false otherwise.
-       */
-      function isExistingOwner(userId) {
-          return exists(/databases/$(database)/documents/users/$(userId));
-      }
+       /**
+        * Checks if the owner exists before allowing the write.
+        * @param {string} userId - The user ID from the path.
+        * @return {bool} - True if the user is the owner and the resource exists, false otherwise.
+        */
+       function isExistingOwner(userId) {
+           return exists(/databases/$(database)/documents/users/$(userId));
+       }
 
       allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId && isExistingOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
     }
 
     /**
@@ -129,30 +129,20 @@ service cloud.firestore {
         return request.auth != null;
       }
 
-      /**
-       * Checks if the owner exists before allowing the write.
-       * @param {string} userId - The user ID from the path.
-       * @return {bool} - True if the user is the owner and the resource exists, false otherwise.
-       */
-      function isExistingOwner(userId) {
-          return exists(/databases/$(database)/documents/users/$(userId));
-      }
-
-      /**
-       * Checks if the device exists before allowing the write.
-       * @param {string} userId - The user ID from the path.
-       * @param {string} deviceId - The device ID from the path.
-       * @return {bool} - True if the device exists, false otherwise.
-       */
-      function isExistingDevice(userId, deviceId) {
-          return exists(/databases/$(database)/documents/users/$(userId)/devices/$(deviceId));
-      }
+       /**
+        * Checks if the owner exists before allowing the write.
+        * @param {string} userId - The user ID from the path.
+        * @return {bool} - True if the user is the owner and the resource exists, false otherwise.
+        */
+       function isExistingOwner(userId) {
+           return exists(/databases/$(database)/documents/users/$(userId));
+       }
 
       allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && isExistingOwner(userId) && isExistingDevice(userId, deviceId);
-      allow update: if isSignedIn() && isOwner(userId) && isExistingOwner(userId) && isExistingDevice(userId, deviceId);
-      allow delete: if isSignedIn() && isOwner(userId) && isExistingOwner(userId) && isExistingDevice(userId, deviceId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId && isExistingOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
     }
   }
 }
