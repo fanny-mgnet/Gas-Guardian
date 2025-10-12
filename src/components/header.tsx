@@ -27,20 +27,33 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 export function Header() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
     const router = useRouter();
     const { toast } = useToast();
     const [open, setOpen] = React.useState(false);
+    const auth = useAuth();
 
 
-    const handleLogout = () => {
-        toast({
-            title: 'Logged Out',
-            description: 'You have been successfully logged out.',
-        });
-        router.push('/login');
+    const handleLogout = async () => {
+        if (!auth) return;
+        try {
+            await signOut(auth);
+            toast({
+                title: 'Logged Out',
+                description: 'You have been successfully logged out.',
+            });
+            router.push('/login');
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Logout Failed',
+                description: 'An error occurred while logging out. Please try again.',
+            });
+        }
     };
 
     return (

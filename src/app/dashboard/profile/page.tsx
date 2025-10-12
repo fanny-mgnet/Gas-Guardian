@@ -48,6 +48,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 function InfoCard({
     icon: Icon,
@@ -148,6 +150,7 @@ function SettingsItem({
 export default function ProfilePage() {
     const { toast } = useToast();
     const router = useRouter();
+    const auth = useAuth();
     const userAvatarLg = PlaceHolderImages.find(p => p.id === 'user-avatar-lg');
     const user = {
         name: 'Sarah Johnson',
@@ -166,12 +169,22 @@ export default function ProfilePage() {
         theme: 'Light Mode',
     };
 
-    const handleLogout = () => {
-        toast({
-            title: 'Logged Out',
-            description: 'You have been successfully logged out.',
-        });
-        router.push('/login');
+    const handleLogout = async () => {
+        if (!auth) return;
+        try {
+            await signOut(auth);
+            toast({
+                title: 'Logged Out',
+                description: 'You have been successfully logged out.',
+            });
+            router.push('/login');
+        } catch (error) {
+             toast({
+                variant: 'destructive',
+                title: 'Logout Failed',
+                description: 'An error occurred while logging out. Please try again.',
+            });
+        }
     };
 
     const handleNotImplemented = (feature: string) => {
