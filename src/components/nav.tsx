@@ -5,8 +5,7 @@ import {
   HardHat,
   BarChart2,
   User,
-  Settings,
-  LifeBuoy
+  Bell,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -28,6 +27,12 @@ export const navItems = [
         label: 'Statistics',
         icon: BarChart2,
         isActive: (pathname: string) => pathname.startsWith('/dashboard/statistics'),
+    },
+    {
+        href: '/dashboard/notifications',
+        label: 'Notifications',
+        icon: Bell,
+        isActive: (pathname: string) => pathname.startsWith('/dashboard/notifications'),
     },
     {
         href: '/dashboard/profile',
