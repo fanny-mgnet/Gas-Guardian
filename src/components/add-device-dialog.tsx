@@ -8,13 +8,12 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 import { useState } from 'react';
 
 export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
@@ -23,7 +22,7 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
     const { user } = useUser();
     const [isOpen, setIsOpen] = useState(false);
 
-    const handleStartSetup = () => {
+    const handleStartSetup = async () => {
         if (!firestore || !user) {
             toast({
                 variant: 'destructive',
@@ -48,13 +47,20 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
             userId: user.uid,
         };
 
-        addDocumentNonBlocking(devicesCollection, newDevice);
-
-        toast({
-            title: "Device Added",
-            description: "New device has been registered to your account.",
-        });
-        setIsOpen(false);
+        try {
+            await addDoc(devicesCollection, newDevice);
+            toast({
+                title: "Device Added",
+                description: "New device has been registered to your account.",
+            });
+            setIsOpen(false);
+        } catch (error: any) {
+             toast({
+                variant: 'destructive',
+                title: 'Failed to Add Device',
+                description: error.message,
+            });
+        }
     };
 
     return (
