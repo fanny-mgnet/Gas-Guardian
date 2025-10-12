@@ -49,8 +49,8 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // Definitive guard against race conditions.
     // If the query is not ready, set loading to true, clear old data/errors and wait.
-    // This is the definitive guard against race conditions.
     if (!memoizedTargetRefOrQuery) {
       setIsLoading(true);
       setData(null);
@@ -58,7 +58,6 @@ export function useCollection<T = any>(
       return;
     }
 
-    // Set loading state to true when starting to fetch data
     setIsLoading(true);
     setError(null);
 
@@ -77,11 +76,12 @@ export function useCollection<T = any>(
         let path: string;
         // This is a hacky way to get the path, but it's the only way without access to internal properties
         try {
-            if (memoizedTargetRefOrQuery.type === 'collection') {
-              path = (memoizedTargetRefOrQuery as CollectionReference).path;
+            if ('_query' in memoizedTargetRefOrQuery && (memoizedTargetRefOrQuery as any)._query.path) {
+                path = (memoizedTargetRefOrQuery as any)._query.path.canonicalString();
+            } else if ('path' in memoizedTargetRefOrQuery) {
+                path = (memoizedTargetRefOrQuery as CollectionReference).path;
             } else {
-              // This relies on non-public properties and might break.
-              path = (memoizedTargetRefOrQuery as any)._query.path.canonicalString();
+                path = 'unknown_path';
             }
         } catch (e) {
             path = "unknown_path"; // Fallback if path extraction fails
