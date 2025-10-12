@@ -1,12 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Cpu, HardHat } from 'lucide-react';
+import {
+  ArrowLeft,
+  Cpu,
+  HardHat,
+  Bell,
+  MessageSquare,
+  Mail,
+  Settings as SettingsIcon,
+  ShieldAlert,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 
 function SettingsItem({
@@ -25,6 +35,37 @@ function SettingsItem({
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       <div className="flex-shrink-0 pt-1">{children}</div>
+    </div>
+  );
+}
+
+function NotificationMethodItem({
+  icon: Icon,
+  iconBg,
+  title,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  icon: React.ElementType;
+  iconBg: string;
+  title: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start">
+      <div className={`h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-lg ${iconBg}`}>
+        <Icon className="h-5 w-5 text-primary" />
+      </div>
+      <div className="ml-4 flex-grow">
+        <label htmlFor={title} className="font-semibold cursor-pointer">{title}</label>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <div className="ml-auto pl-2 flex items-center h-11">
+        <Checkbox id={title} checked={checked} onCheckedChange={onCheckedChange} />
+      </div>
     </div>
   );
 }
@@ -72,10 +113,12 @@ function DeviceNotificationSettings({
   icon: Icon,
   name,
   connected,
+  status,
 }: {
   icon: React.ElementType;
   name: string;
   connected: boolean;
+  status?: string;
 }) {
   const [statusUpdates, setStatusUpdates] = useState(true);
   const [batteryWarnings, setBatteryWarnings] = useState(false);
@@ -83,49 +126,40 @@ function DeviceNotificationSettings({
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center">
-            <div className="bg-primary/10 text-primary h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-lg">
-                <Icon className="h-5 w-5" />
-            </div>
-            <div className="ml-4 flex-grow">
-                <p className="font-semibold">{name}</p>
-                <div className="text-sm text-muted-foreground flex items-center">
-                    <span className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-muted-foreground'} mr-2`}></span>
-                    {connected ? 'Connected' : 'Disconnected'}
-                </div>
-            </div>
+      <div className="flex items-center">
+        <div className="bg-primary/10 text-primary h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-lg">
+          {name === "Basement Gas Sensor" && status === "Warning" ? <ShieldAlert className="h-5 w-5 text-accent"/> : <Icon className="h-5 w-5" />}
         </div>
-        <SettingsItem
-            title="Status Updates"
-            description="Receive notifications when device status changes"
-        >
-            <Switch
-            checked={statusUpdates}
-            onCheckedChange={setStatusUpdates}
-            />
-        </SettingsItem>
-        <SettingsItem
-            title="Battery Warnings"
-            description="Get alerts when device battery is low"
-        >
-            <Switch
-            checked={batteryWarnings}
-            onCheckedChange={setBatteryWarnings}
-            />
-        </SettingsItem>
-        <SettingsItem
-            title="Connectivity Alerts"
-            description="Notifications for connection issues"
-        >
-            <Switch
-            checked={connectivityAlerts}
-            onCheckedChange={setConnectivityAlerts}
-            />
-        </SettingsItem>
+        <div className="ml-4 flex-grow">
+          <p className="font-semibold">{name}</p>
+          <div className="text-sm text-muted-foreground flex items-center">
+            { status ? (
+                <>
+                <span className={'h-2 w-2 rounded-full bg-yellow-500 mr-2'}></span>
+                {status}
+                </>
+            ) : (
+                <>
+                <span className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-muted-foreground'} mr-2`}></span>
+                {connected ? 'Connected' : 'Disconnected'}
+                </>
+            )}
+            
+          </div>
+        </div>
+      </div>
+      <SettingsItem title="Status Updates" description="Receive notifications when device status changes">
+        <Switch checked={statusUpdates} onCheckedChange={setStatusUpdates} />
+      </SettingsItem>
+      <SettingsItem title="Battery Warnings" description="Get alerts when device battery is low">
+        <Switch checked={batteryWarnings} onCheckedChange={setBatteryWarnings} />
+      </SettingsItem>
+      <SettingsItem title="Connectivity Alerts" description="Notifications for connection issues">
+        <Switch checked={connectivityAlerts} onCheckedChange={setConnectivityAlerts} />
+      </SettingsItem>
     </div>
   );
 }
-
 
 export default function NotificationsSettingsPage() {
   const [criticalAlerts, setCriticalAlerts] = useState(true);
@@ -133,6 +167,10 @@ export default function NotificationsSettingsPage() {
   const [warningAlerts, setWarningAlerts] = useState(true);
   const [warningThreshold, setWarningThreshold] = useState(50);
   const [maintenanceReminders, setMaintenanceReminders] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [smsAlerts, setSmsAlerts] = useState(false);
+  const [emailSummaries, setEmailSummaries] = useState(true);
+  const [quietHours, setQuietHours] = useState(false);
 
   return (
     <div className="bg-background min-h-screen">
@@ -230,8 +268,63 @@ export default function NotificationsSettingsPage() {
              <DeviceNotificationSettings
                 icon={Cpu}
                 name="Basement Gas Sensor"
-                connected={false}
+                connected={true}
+                status="Warning"
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Methods</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <NotificationMethodItem
+              icon={Bell}
+              iconBg="bg-blue-100 dark:bg-blue-900/50"
+              title="Push Notifications"
+              description="Instant alerts on your device"
+              checked={pushNotifications}
+              onCheckedChange={setPushNotifications}
+            />
+            <Separator />
+            <NotificationMethodItem
+              icon={MessageSquare}
+              iconBg="bg-green-100 dark:bg-green-900/50"
+              title="SMS Alerts"
+              description="Text messages for critical alerts"
+              checked={smsAlerts}
+              onCheckedChange={setSmsAlerts}
+            />
+            <Separator />
+            <NotificationMethodItem
+              icon={Mail}
+              iconBg="bg-orange-100 dark:bg-orange-900/50"
+              title="Email Summaries"
+              description="Daily and weekly reports via email"
+              checked={emailSummaries}
+              onCheckedChange={setEmailSummaries}
+            />
+            <div className="pt-2">
+                <Button variant="outline" className="w-full">
+                    <SettingsIcon className="mr-2 h-4 w-4" />
+                    Manage Permissions
+                </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+         <Card>
+          <CardContent className="p-4">
+             <SettingsItem
+              title="Quiet Hours"
+              description="Disable non-critical notifications"
+            >
+              <Switch
+                checked={quietHours}
+                onCheckedChange={setQuietHours}
+              />
+            </SettingsItem>
           </CardContent>
         </Card>
       </div>
