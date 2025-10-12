@@ -10,7 +10,7 @@ import { AddDeviceDialog } from '@/components/add-device-dialog';
 import Link from 'next/link';
 import { Header } from '@/components/header';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function DashboardLoading() {
@@ -78,7 +78,7 @@ export default function Dashboard() {
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemoFirebase(() => 
-    firestore ? query(collection(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50)) : null, 
+    firestore ? query(collectionGroup(firestore, 'alerts'), orderBy('createdAt', 'desc'), limit(50)) : null, 
     [firestore]
   );
   const { data: allAlerts, isLoading: alertsLoading } = useCollection<Alert>(alertsQuery);
@@ -88,12 +88,19 @@ export default function Dashboard() {
     return <DashboardLoading />;
   }
 
-  const latestAlert = allAlerts?.[0];
+  const getLatestAlert = () => {
+    if (!allAlerts || allAlerts.length === 0) return null;
+    // The query is already ordered by createdAt desc, so the first one is the latest
+    return allAlerts[0];
+  }
+
+  const latestAlert = getLatestAlert();
   const gasLevel = latestAlert ? JSON.parse(latestAlert.sensorData).gas_value : 0;
   const lastUpdated = latestAlert?.createdAt;
 
   const getLatestAlertForDevice = (deviceId: string): Alert | undefined => {
     if (!allAlerts) return undefined;
+    // Since allAlerts is sorted by date, the first one we find for the device is its latest.
     return allAlerts.find(alert => alert.deviceId === deviceId);
   };
 
