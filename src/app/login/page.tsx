@@ -44,7 +44,14 @@ export default function LoginPage() {
 
 
   const handleLogin = async () => {
-    if (!auth) return;
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'Authentication service is not available.',
+        });
+        return;
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');

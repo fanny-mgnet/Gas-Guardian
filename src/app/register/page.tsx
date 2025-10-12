@@ -52,7 +52,14 @@ export default function RegisterPage() {
       })
       return;
     }
-    if (!auth) return;
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Registration Failed',
+            description: 'Authentication service not available.',
+        })
+        return;
+    }
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
@@ -79,7 +86,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md p-4">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">Create Account</h1>
-          <p className="text-white/80">Join Gas Detector App</p>
+          <p className="text-white/80">Join SmartGas Guardian</p>
         </div>
 
         <Card className="bg-card/90 backdrop-blur-sm text-card-foreground border-white/20">
