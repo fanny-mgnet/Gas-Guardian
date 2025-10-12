@@ -16,17 +16,16 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { getAllAlerts, getDevices } from '@/lib/data';
 import Link from 'next/link';
-import { ArrowUpRight, HardHat, ShieldAlert, ShieldCheck, Activity } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { GasLevelKnob } from '@/components/gas-level-knob';
 
 export default async function Dashboard() {
   const devices = await getDevices();
   const allAlerts = await getAllAlerts();
 
-  const activeDevices = devices.filter(d => d.is_active).length;
-  const criticalAlerts = allAlerts.filter(a => a.alert_type === 'gas_emergency' && new Date(a.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length;
   const recentAlerts = allAlerts.slice(0, 5);
 
   const getAlertVariant = (type: string) => {
@@ -40,65 +39,14 @@ export default async function Dashboard() {
     }
   };
 
+  const latestAlert = allAlerts[0]
+  const gasLevel = latestAlert?.sensor_data.gas_value ?? 0;
+  const lastUpdated = latestAlert?.created_at;
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <main className="flex flex-1 flex-col gap-4 md:gap-8">
-        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Devices
-              </CardTitle>
-              <HardHat className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{devices.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {activeDevices} active
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Critical Alerts (24h)
-              </CardTitle>
-              <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{criticalAlerts}</div>
-              <p className="text-xs text-muted-foreground">
-                Immediate attention needed
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Status</CardTitle>
-              {criticalAlerts > 0 ? <ShieldAlert className="h-4 w-4 text-destructive" /> : <ShieldCheck className="h-4 w-4 text-green-500" />}
-            </CardHeader>
-            <CardContent>
-              <div className={cn("text-2xl font-bold", criticalAlerts > 0 ? 'text-destructive' : 'text-green-500')}>
-                {criticalAlerts > 0 ? 'Alert Active' : 'Nominal'}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Real-time system health
-              </p>
-            </CardContent>
-          </Card>
-           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Activity</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">+{allAlerts.length}</div>
-              <p className="text-xs text-muted-foreground">
-                total alerts logged
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <GasLevelKnob gasLevel={gasLevel} lastUpdated={lastUpdated} />
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
           <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center">
