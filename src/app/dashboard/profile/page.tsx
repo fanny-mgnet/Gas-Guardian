@@ -14,13 +14,8 @@ import {
     Calendar,
     Camera,
     CheckCircle2,
-    ShieldCheck,
-    Settings,
     ChevronRight,
-    Star,
-    Bell,
-    FileText,
-    LogOut
+    Star
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -63,12 +58,69 @@ function InfoCard({
     );
 }
 
+function SectionHeader({
+    icon: Icon,
+    title,
+    subtitle,
+  }: {
+    icon: React.ElementType;
+    title: string;
+    subtitle: string;
+  }) {
+    return (
+      <div className="flex items-center gap-4 px-4 py-2">
+        <Icon className="h-5 w-5 text-muted-foreground" />
+        <div>
+          <h3 className="font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+    );
+}
+
+function SettingsItem({
+    icon: Icon,
+    iconBg,
+    title,
+    subtitle,
+    onTap,
+  }: {
+    icon: React.ElementType;
+    iconBg?: string;
+    title: string;
+    subtitle?: string;
+    onTap?: () => void;
+  }) {
+    const content = (
+      <Card className="shadow-sm bg-card">
+        <CardContent className="p-4 flex items-center">
+            <div className={`h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-lg ${iconBg || 'bg-primary/10'}`}>
+                <Icon className="h-5 w-5 text-primary" />
+            </div>
+          <div className="ml-4 flex-grow">
+            <p className="font-semibold">{title}</p>
+            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          </div>
+          <div className="ml-auto pl-2">
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  
+    if (onTap) {
+      return <button onClick={onTap} className="w-full text-left">{content}</button>;
+    }
+    return content;
+}
+
 export default function ProfilePage() {
     const userAvatarLg = PlaceHolderImages.find(p => p.id === 'user-avatar-lg');
     const user = {
         name: 'Sarah Johnson',
         email: 'sarah.johnson@email.com',
         phone: '+1 555-0123',
+        emergencyContact: '+1 555-0456',
         accountCreated: 'January 15, 2024',
         isEmailVerified: true,
     };
@@ -109,16 +161,19 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
-                <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold">{user.name}</h2>
-                    <p className="text-muted-foreground">{user.email}</p>
-                </div>
-
-                <div className="space-y-2">
+                
+                <div className="space-y-2 mb-6">
                     <InfoCard icon={User} label="Full Name" value={user.name} action={editButton} />
                     <InfoCard icon={Mail} label="Email Address" value={user.email} action={editButton} isVerified={user.isEmailVerified} />
                     <InfoCard icon={Phone} label="Phone Number" value={user.phone} action={editButton} />
                     <InfoCard icon={Calendar} label="Account Created" value={user.accountCreated} />
+                </div>
+
+                <div className="space-y-4">
+                    <SectionHeader icon={User} title="Personal Information" subtitle="Manage your personal details" />
+                    <div className="space-y-2">
+                        <SettingsItem icon={Star} title="Emergency Contact" subtitle={user.emergencyContact} iconBg="bg-red-100" />
+                    </div>
                 </div>
             </div>
         </div>
