@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Cpu, HardHat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -68,13 +68,71 @@ function ThresholdSlider({
   );
 }
 
+function DeviceNotificationSettings({
+  icon: Icon,
+  name,
+  connected,
+}: {
+  icon: React.ElementType;
+  name: string;
+  connected: boolean;
+}) {
+  const [statusUpdates, setStatusUpdates] = useState(true);
+  const [batteryWarnings, setBatteryWarnings] = useState(false);
+  const [connectivityAlerts, setConnectivityAlerts] = useState(true);
+
+  return (
+    <div className="space-y-4">
+        <div className="flex items-center">
+            <div className="bg-primary/10 text-primary h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-lg">
+                <Icon className="h-5 w-5" />
+            </div>
+            <div className="ml-4 flex-grow">
+                <p className="font-semibold">{name}</p>
+                <div className="text-sm text-muted-foreground flex items-center">
+                    <span className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-muted-foreground'} mr-2`}></span>
+                    {connected ? 'Connected' : 'Disconnected'}
+                </div>
+            </div>
+        </div>
+        <SettingsItem
+            title="Status Updates"
+            description="Receive notifications when device status changes"
+        >
+            <Switch
+            checked={statusUpdates}
+            onCheckedChange={setStatusUpdates}
+            />
+        </SettingsItem>
+        <SettingsItem
+            title="Battery Warnings"
+            description="Get alerts when device battery is low"
+        >
+            <Switch
+            checked={batteryWarnings}
+            onCheckedChange={setBatteryWarnings}
+            />
+        </SettingsItem>
+        <SettingsItem
+            title="Connectivity Alerts"
+            description="Notifications for connection issues"
+        >
+            <Switch
+            checked={connectivityAlerts}
+            onCheckedChange={setConnectivityAlerts}
+            />
+        </SettingsItem>
+    </div>
+  );
+}
+
+
 export default function NotificationsSettingsPage() {
   const [criticalAlerts, setCriticalAlerts] = useState(true);
   const [criticalThreshold, setCriticalThreshold] = useState(85);
   const [warningAlerts, setWarningAlerts] = useState(true);
   const [warningThreshold, setWarningThreshold] = useState(50);
   const [maintenanceReminders, setMaintenanceReminders] = useState(false);
-  const [statusUpdates, setStatusUpdates] = useState(true);
 
   return (
     <div className="bg-background min-h-screen">
@@ -157,28 +215,23 @@ export default function NotificationsSettingsPage() {
             <CardTitle>Device Notifications</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center">
-              <div className="bg-primary/10 text-primary h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 lucide lucide-wifi"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>
-              </div>
-              <div className="ml-4 flex-grow">
-                <p className="font-semibold">Living Room Gas Detector</p>
-                <div className="text-sm text-muted-foreground flex items-center">
-                  <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                  Connected
-                </div>
-              </div>
-            </div>
+            <DeviceNotificationSettings
+                icon={Cpu}
+                name="Living Room Gas Detector"
+                connected={true}
+            />
             <Separator />
-            <SettingsItem
-              title="Status Updates"
-              description="Receive notifications when device status changes"
-            >
-              <Switch
-                checked={statusUpdates}
-                onCheckedChange={setStatusUpdates}
-              />
-            </SettingsItem>
+             <DeviceNotificationSettings
+                icon={HardHat}
+                name="Kitchen Gas Monitor"
+                connected={true}
+            />
+             <Separator />
+             <DeviceNotificationSettings
+                icon={Cpu}
+                name="Basement Gas Sensor"
+                connected={false}
+            />
           </CardContent>
         </Card>
       </div>
