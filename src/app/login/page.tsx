@@ -15,8 +15,9 @@ import { Mail, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import { useAuth, useUser } from '@/firebase';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { icon: React.ElementType, id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
@@ -33,6 +34,7 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -41,8 +43,18 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
 
-  const handleLogin = () => {
-    initiateEmailSignIn(auth, email, password);
+  const handleLogin = async () => {
+    if (!auth) return;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: error.message,
+      })
+    }
   };
 
   if (isUserLoading || (!isUserLoading && user)) {

@@ -14,8 +14,9 @@ import { User, Mail, Phone, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
-import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useState, useEffect } from 'react';
+import { useToast } from "@/hooks/use-toast";
 
 function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { icon: React.ElementType, id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
@@ -33,6 +34,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const { toast } = useToast();
   // Other fields can be added here if needed for Firestore profile
 
   useEffect(() => {
@@ -41,12 +43,27 @@ export default function RegisterPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (password !== confirmPassword) {
-      alert("Passwords do not match"); // Replace with better UI
+      toast({
+        variant: 'destructive',
+        title: 'Registration Failed',
+        description: 'Passwords do not match.',
+      })
       return;
     }
-    initiateEmailSignUp(auth, email, password);
+    if (!auth) return;
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.push('/dashboard');
+    } catch (error: any) {
+       toast({
+        variant: 'destructive',
+        title: 'Registration Failed',
+        description: error.message,
+      })
+    }
   };
 
   if (isUserLoading || (!isUserLoading && user)) {

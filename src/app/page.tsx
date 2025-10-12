@@ -2,25 +2,21 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { useUser } from '@/firebase';
 
 export default function Home() {
   const router = useRouter();
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
     if (!isUserLoading) {
       if (user) {
-        // If user is already signed in, redirect to dashboard
         router.push('/dashboard');
       } else {
-        // If no user, sign in anonymously and then redirect
-        initiateAnonymousSignIn(auth);
+        router.push('/login');
       }
     }
-  }, [user, isUserLoading, auth, router]);
+  }, [user, isUserLoading, router]);
 
   // While checking auth state, you can show a loading indicator
   return (
