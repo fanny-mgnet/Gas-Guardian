@@ -4,67 +4,50 @@ import { useState } from 'react';
 import {
   ArrowLeft,
   Share2,
-  BarChart,
+  BarChart as BarChartIcon,
   Calendar,
-  AreaChart,
-  TrendingUp,
   ShieldCheck,
   AlertTriangle,
-  ArrowUp,
+  TrendingUp,
   ArrowDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
-  Dot,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-const chartData = [
-    { name: '0:00', value: 15, status: 'safe' },
-    { name: '2:00', value: 18, status: 'safe' },
-    { name: '4:00', value: 25, status: 'safe' },
-    { name: '6:00', value: 28, status: 'safe' },
-    { name: '8:00', value: 30, status: 'warning' },
-    { name: '10:00', value: 35, status: 'warning' },
-    { name: '12:00', value: 38, status: 'warning' },
-    { name: '14:00', value: 42, status: 'warning' },
-    { name: '16:00', value: 45, status: 'warning' },
-    { name: '18:00', value: 48, status: 'warning' },
-    { name: '20:00', value: 50, status: 'warning' },
-    { name: '22:00', value: 55, status: 'warning' },
+const deviceComparisonData = [
+  { name: 'Kitchen', value: 42, color: 'hsl(var(--chart-1))' },
+  { name: 'Living Room', value: 38, color: 'hsl(var(--chart-3))' },
+  { name: 'Basement', value: 65, color: 'hsl(var(--destructive))' },
+  { name: 'Garage', value: 52, color: 'hsl(var(--chart-2))' },
 ];
 
-const getDotColor = (status: string) => {
-    switch (status) {
-        case 'safe':
-            return 'hsl(var(--chart-3))';
-        case 'warning':
-            return 'hsl(var(--primary))';
-        case 'danger':
-            return 'hsl(var(--destructive))';
-        default:
-            return 'hsl(var(--muted-foreground))';
-    }
-};
+function BigStatCard({ title, value, unit }: { title: string, value: string, unit: string }) {
+    return (
+        <Card className="shadow-sm flex-1">
+            <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">{title}</p>
+                <p className="text-3xl font-bold">
+                    {value}
+                    <span className="text-xl font-medium text-muted-foreground ml-1">{unit}</span>
+                </p>
+            </CardContent>
+        </Card>
+    );
+}
 
-const CustomDot = (props: any) => {
-    const { cx, cy, payload } = props;
-    return <Dot cx={cx} cy={cy} r={4} fill={getDotColor(payload.status)} stroke={getDotColor(payload.status)} strokeWidth={2} />;
-};
-
-
-function StatCard({
+function SmallStatCard({
   icon: Icon,
   title,
   value,
@@ -80,43 +63,56 @@ function StatCard({
   changeType: 'increase' | 'decrease';
 }) {
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm flex-1">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="bg-primary/10 text-primary p-1.5 rounded-md">
-            <Icon className="h-5 w-5" />
-          </div>
-          <div
-            className={cn(
-              'flex items-center text-xs font-semibold px-2 py-1 rounded-full',
-              changeType === 'increase'
-                ? 'bg-red-100 text-red-600'
-                : 'bg-green-100 text-green-600'
-            )}
-          >
-            {changeType === 'increase' ? (
-              <TrendingUp className="h-3 w-3 mr-1" />
-            ) : (
-              <ArrowDown className="h-3 w-3 mr-1" />
-            )}
-            {change}
-          </div>
+        <div className="flex items-start justify-between mb-2">
+            <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                <Icon className="h-5 w-5" />
+            </div>
+            <div
+                className={cn(
+                'flex items-center text-xs font-semibold px-2 py-1 rounded-full',
+                changeType === 'increase'
+                    ? 'bg-green-100 text-green-600'
+                    : 'bg-red-100 text-red-600'
+                )}
+            >
+                {changeType === 'increase' ? (
+                <ArrowUp className="h-3 w-3 mr-1" />
+                ) : (
+                <TrendingUp className="h-3 w-3 mr-1" />
+                )}
+                {change}
+            </div>
         </div>
-        <p className="text-xs text-muted-foreground">{title}</p>
-        <p className="text-2xl font-bold">
-          {value}
-          <span className="text-lg font-medium text-muted-foreground ml-1">{unit}</span>
-        </p>
+        <div>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold">
+                {value}
+                <span className="text-base font-medium text-muted-foreground ml-1">{unit}</span>
+            </p>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
+function LegendItem({ color, label, value }: { color: string, label: string, value: string }) {
+    return (
+        <Button variant="outline" className="h-auto py-2 px-3 border-2 rounded-lg" style={{ borderColor: color }}>
+            <span className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: color }}></span>
+            <div className="flex flex-col items-start">
+                <span className="text-xs text-muted-foreground">{label}</span>
+                <span className="font-bold text-sm text-foreground">{value}</span>
+            </div>
+        </Button>
+    )
+}
+
 export default function StatisticsPage() {
-  const [timeRange, setTimeRange] = useState('Today');
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-screen pb-24">
       <header className="bg-card p-4 flex items-center justify-between border-b sticky top-0 z-10">
         <Button variant="ghost" size="icon" asChild>
             <Link href="/dashboard">
@@ -133,7 +129,7 @@ export default function StatisticsPage() {
         <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="analytics">
-              <BarChart className="mr-2 h-4 w-4" />
+              <BarChartIcon className="mr-2 h-4 w-4" />
               Analytics
             </TabsTrigger>
             <TabsTrigger value="calendar">
@@ -142,96 +138,64 @@ export default function StatisticsPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="analytics" className="space-y-4">
-            <div className="flex space-x-2 bg-muted p-1 rounded-lg">
-              {['Today', 'Week', 'Month', 'Year'].map((range) => (
-                <Button
-                  key={range}
-                  variant={timeRange === range ? 'default' : 'ghost'}
-                  onClick={() => setTimeRange(range)}
-                  className="flex-1 text-sm h-8 shadow-sm"
-                >
-                  {range}
-                </Button>
-              ))}
+
+            <div className="flex gap-4">
+                <BigStatCard title="Average Level" value="32.5" unit="ppm" />
+                <BigStatCard title="Peak Reading" value="52.8" unit="ppm" />
             </div>
 
-            <Card className="shadow-sm">
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold mb-2">Gas Level Trend</h3>
-                <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip
-                            contentStyle={{
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: 'var(--radius)',
-                            }}
-                        />
-                         <defs>
-                            <linearGradient id="lineColor" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="30%" stopColor="hsl(var(--chart-3))" />
-                                <stop offset="30%" stopColor="hsl(var(--primary))" />
-                            </linearGradient>
-                        </defs>
-                        <Line type="monotone" dataKey="value" stroke="url(#lineColor)" strokeWidth={3} activeDot={{ r: 6 }} dot={<CustomDot />} />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-                 <div className="flex justify-center items-center space-x-6 mt-4 text-xs">
-                    <div className="flex items-center">
-                        <span className="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></span>
-                        <span>Safe</span>
-                    </div>
-                    <div className="flex items-center">
-                        <span className="h-2.5 w-2.5 rounded-full bg-purple-500 mr-2"></span>
-                        <span>Warning</span>
-                    </div>
-                    <div className="flex items-center">
-                        <span className="h-2.5 w-2.5 rounded-full bg-red-500 mr-2"></span>
-                        <span>Danger</span>
-                    </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-2 gap-4">
-              <StatCard
-                icon={AreaChart}
-                title="Average Level"
-                value="32.5"
-                unit="ppm"
-                change="+2.3%"
-                changeType="increase"
-              />
-              <StatCard
-                icon={TrendingUp}
-                title="Peak Reading"
-                value="52.8"
-                unit="ppm"
-                change="+5.1%"
-                changeType="increase"
-              />
-              <StatCard
+            <div className="flex gap-4">
+              <SmallStatCard
                 icon={ShieldCheck}
                 title="Safe Hours"
                 value="18.5"
                 unit="hrs"
                 change="+12.3%"
-                changeType="decrease"
+                changeType="increase"
               />
-              <StatCard
+              <SmallStatCard
                 icon={AlertTriangle}
                 title="Alerts"
                 value="3"
-                unit="events"
+                unit="times"
                 change="-25.0%"
                 changeType="decrease"
               />
             </div>
+            
+            <Card className="shadow-sm">
+                <CardContent className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">Device Comparison</h3>
+                    <div className="h-[200px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={deviceComparisonData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))',
+                                        borderRadius: 'var(--radius)',
+                                    }}
+                                    cursor={{fill: 'hsla(var(--muted-foreground), 0.1)'}}
+                                />
+                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                    {deviceComparisonData.map((entry, index) => (
+                                        <rect key={`cell-${index}`} x={entry.value} y={entry.value} width={entry.value} height={entry.value} fill={entry.color} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                     <div className="flex justify-around items-center flex-wrap gap-2 mt-4 text-xs">
+                        <LegendItem color="hsl(var(--chart-1))" label="Kitchen Sensor" value="42.5 ppm" />
+                        <LegendItem color="hsl(var(--chart-3))" label="Living Room" value="38.2 ppm" />
+                        <LegendItem color="hsl(var(--destructive))" label="Basement" value="65.1 ppm" />
+                    </div>
+                </CardContent>
+            </Card>
+
           </TabsContent>
           <TabsContent value="calendar">
             <Card>
