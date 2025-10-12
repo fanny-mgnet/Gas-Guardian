@@ -241,6 +241,13 @@ export default function NotificationsSettingsPage() {
     });
   };
 
+    const handleOpenSettings = () => {
+        toast({
+            title: "Opening Settings",
+            description: "Redirecting to your device's notification settings...",
+        });
+    };
+
   const vibrationPatterns = ['Default', 'Short', 'Long', 'Double', 'Triple'];
   const ledColors = [
     { name: 'blue', hex: 'bg-blue-500' },
@@ -403,7 +410,7 @@ export default function NotificationsSettingsPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction>Open Settings</AlertDialogAction>
+                        <AlertDialogAction onClick={handleOpenSettings}>Open Settings</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>

@@ -35,6 +35,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 
 function InfoCard({
     icon: Icon,
@@ -133,6 +134,7 @@ function SettingsItem({
 }
 
 export default function ProfilePage() {
+    const { toast } = useToast();
     const userAvatarLg = PlaceHolderImages.find(p => p.id === 'user-avatar-lg');
     const user = {
         name: 'Sarah Johnson',
@@ -151,8 +153,22 @@ export default function ProfilePage() {
         theme: 'Light Mode',
     };
 
+    const handleLogout = () => {
+        toast({
+            title: 'Logged Out',
+            description: 'You have been successfully logged out.',
+        });
+    };
+
+    const handleNotImplemented = (feature: string) => {
+        toast({
+            title: 'Coming Soon!',
+            description: `${feature} functionality is not yet implemented.`,
+        });
+    }
+
     const editButton = (
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted/80">
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted/80" onClick={() => handleNotImplemented('Editing profile fields')}>
             <Pencil className="h-4 w-4" />
         </Button>
     );
@@ -166,7 +182,7 @@ export default function ProfilePage() {
                     </Link>
                 </Button>
                 <h1 className="text-lg font-semibold">Profile</h1>
-                <Button variant="ghost" size="icon" className="text-primary">
+                <Button variant="ghost" size="icon" className="text-primary" onClick={() => handleNotImplemented('Editing profile')}>
                     <Pencil className="h-5 w-5" />
                 </Button>
             </header>
@@ -198,7 +214,7 @@ export default function ProfilePage() {
                 <div className="space-y-4 mb-6">
                     <SectionHeader icon={User} title="Personal Information" subtitle="Manage your personal details" />
                     <div className="space-y-2">
-                        <SettingsItem icon={Star} title="Emergency Contact" subtitle={user.emergencyContact} iconBg="bg-red-100" onTap={() => {}}/>
+                        <SettingsItem icon={Star} title="Emergency Contact" subtitle={user.emergencyContact} iconBg="bg-red-100" onTap={() => handleNotImplemented('Editing emergency contact')}/>
                     </div>
                 </div>
                 
@@ -232,19 +248,19 @@ export default function ProfilePage() {
                             icon={Lock} 
                             title="Change Password" 
                             subtitle="Update your account password" 
-                            onTap={() => {}} 
+                            onTap={() => handleNotImplemented('Changing password')} 
                         />
                         <SettingsItem 
                             icon={KeyRound} 
                             title="Two-Factor Authentication" 
                             subtitle={user.twoFactorEnabled ? 'Enabled' : 'Disabled'} 
-                            trailing={<Switch checked={user.twoFactorEnabled} />}
+                            trailing={<Switch checked={user.twoFactorEnabled} onCheckedChange={() => handleNotImplemented('2FA')}/>}
                         />
                         <SettingsItem 
                             icon={MonitorSmartphone} 
                             title="Active Sessions" 
                             subtitle={`${user.activeSessions} active sessions`} 
-                            onTap={() => {}}
+                            onTap={() => handleNotImplemented('Managing active sessions')}
                         />
                     </div>
                 </div>
@@ -256,25 +272,25 @@ export default function ProfilePage() {
                             icon={Sun} 
                             title="Theme" 
                             subtitle={user.theme} 
-                            trailing={<Switch />}
+                            trailing={<Switch onCheckedChange={() => handleNotImplemented('Theme switching')} />}
                         />
                         <SettingsItem 
                             icon={Scale} 
                             title="Measurement Units" 
                             subtitle="Metric (°C, kg)" 
-                            trailing={<Switch defaultChecked={user.isMetricUnits} />}
+                            trailing={<Switch defaultChecked={user.isMetricUnits} onCheckedChange={() => handleNotImplemented('Unit switching')} />}
                         />
                         <SettingsItem 
                             icon={Globe} 
                             title="Language" 
                             subtitle={user.language} 
-                            onTap={() => {}}
+                            onTap={() => handleNotImplemented('Language selection')}
                         />
                     </div>
                 </div>
 
                 <div className="mt-8">
-                    <Button variant="destructive" className="w-full justify-center text-base py-6">
+                    <Button variant="destructive" className="w-full justify-center text-base py-6" onClick={handleLogout}>
                         <LogOut className="mr-2 h-5 w-5" />
                         Logout
                     </Button>

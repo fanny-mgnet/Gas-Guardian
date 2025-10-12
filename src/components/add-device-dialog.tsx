@@ -12,8 +12,18 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
+    const { toast } = useToast();
+
+    const handleStartSetup = () => {
+        toast({
+            title: "Setup Started",
+            description: "Please follow the instructions on your device.",
+        });
+    };
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -31,7 +41,7 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
                 </DialogHeader>
                 <DialogFooter className="p-6 pt-4">
                     <DialogClose asChild>
-                        <Button type="button" className="w-full" size="lg">Start Setup</Button>
+                        <Button type="button" className="w-full" size="lg" onClick={handleStartSetup}>Start Setup</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>
