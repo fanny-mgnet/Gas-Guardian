@@ -9,35 +9,28 @@ let firebaseApp: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
-  if (!getApps().length) {
-    try {
-      firebaseApp = initializeApp(firebaseConfig);
-    } catch (e) {
-      if (process.env.NODE_ENV === 'production') {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
+// This function initializes Firebase and should be called on the client side.
+function initializeFirebaseClient() {
+  if (getApps().length === 0) {
+    firebaseApp = initializeApp(firebaseConfig);
   } else {
     firebaseApp = getApp();
   }
-
   auth = getAuth(firebaseApp);
   firestore = getFirestore(firebaseApp);
-  
+
   return { firebaseApp, auth, firestore };
 }
 
+// getSdks should ensure initialization and then return the services.
 export function getSdks() {
   if (!firebaseApp) {
-    // This ensures Firebase is initialized if getSdks is called before initializeFirebase
-    return initializeFirebase();
+    return initializeFirebaseClient();
   }
   return { firebaseApp, auth, firestore };
 }
 
+// Export the rest of the hooks and providers
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';

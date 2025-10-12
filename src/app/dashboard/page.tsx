@@ -12,6 +12,7 @@ import { Header } from '@/components/header';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, collectionGroup } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 function DashboardLoading() {
   return (
@@ -68,14 +69,14 @@ function DashboardLoading() {
   );
 }
 
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-
-
 export default function Dashboard() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
 
-  const devicesRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'devices') : null, [firestore, user]);
+  const devicesRef = useMemoFirebase(() => 
+    (firestore && user) ? collection(firestore, 'devices') : null, 
+    [firestore, user]
+  );
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemoFirebase(() => 
@@ -85,12 +86,12 @@ export default function Dashboard() {
   const { data: allAlerts, isLoading: alertsLoading } = useCollection<Alert>(alertsQuery);
 
 
-  if (devicesLoading || alertsLoading || !devices || !allAlerts) {
+  if (isAuthLoading || devicesLoading || alertsLoading) {
     return <DashboardLoading />;
   }
 
   const getLatestAlert = () => {
-    if (allAlerts.length === 0) return null;
+    if (!allAlerts || allAlerts.length === 0) return null;
     return allAlerts[0];
   }
 
@@ -99,6 +100,7 @@ export default function Dashboard() {
   const lastUpdated = latestAlert?.createdAt;
 
   const getLatestAlertForDevice = (deviceId: string): Alert | undefined => {
+    if (!allAlerts) return undefined;
     return allAlerts.find(alert => alert.deviceId === deviceId);
   };
 
