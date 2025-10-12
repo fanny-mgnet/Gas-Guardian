@@ -1,6 +1,6 @@
 'use client';
 
-import { useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { notFound } from 'next/navigation';
@@ -30,19 +30,16 @@ import DeviceDetailLoading from './loading';
 
 export default function DeviceDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const deviceRef = useMemoFirebase(() => firestore ? doc(firestore, 'devices', params.id) : null, [firestore, params.id]);
+  const deviceRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'devices', params.id) : null, [firestore, user, params.id]);
   const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
 
-  const alertsRef = useMemoFirebase(() => firestore ? collection(firestore, 'devices', params.id, 'alerts') : null, [firestore, params.id]);
+  const alertsRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'devices', params.id, 'alerts') : null, [firestore, user, params.id]);
   const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
 
-  if (isDeviceLoading || isAlertsLoading) {
+  if (isDeviceLoading || isAlertsLoading || !device || !alerts) {
     return <DeviceDetailLoading />;
-  }
-
-  if (!device) {
-    notFound();
   }
 
   const getAlertVariant = (type: string) => {
@@ -56,7 +53,7 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
     }
   };
 
-  const sortedAlerts = alerts ? [...alerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
+  const sortedAlerts = [...alerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const latestAlert = sortedAlerts[0];
 
   return (

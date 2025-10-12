@@ -73,9 +73,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export default function Dashboard() {
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
 
-  const devicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'devices') : null, [firestore]);
+  const devicesRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'devices') : null, [firestore, user]);
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemoFirebase(() => 
@@ -85,13 +85,12 @@ export default function Dashboard() {
   const { data: allAlerts, isLoading: alertsLoading } = useCollection<Alert>(alertsQuery);
 
 
-  if (devicesLoading || alertsLoading || isUserLoading) {
+  if (devicesLoading || alertsLoading || !devices || !allAlerts) {
     return <DashboardLoading />;
   }
 
   const getLatestAlert = () => {
-    if (!allAlerts || allAlerts.length === 0) return null;
-    // The query is already ordered by createdAt desc, so the first one is the latest
+    if (allAlerts.length === 0) return null;
     return allAlerts[0];
   }
 
@@ -100,8 +99,6 @@ export default function Dashboard() {
   const lastUpdated = latestAlert?.createdAt;
 
   const getLatestAlertForDevice = (deviceId: string): Alert | undefined => {
-    if (!allAlerts) return undefined;
-    // Since allAlerts is sorted by date, the first one we find for the device is its latest.
     return allAlerts.find(alert => alert.deviceId === deviceId);
   };
 
