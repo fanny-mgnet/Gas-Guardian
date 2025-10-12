@@ -1,3 +1,4 @@
+'use client';
 
 import {
     Card,
@@ -233,7 +234,7 @@ export default function ProfilePage() {
                         />
                         <SettingsItem 
                             icon={MonitorSmartphone} 
-                            title="Active Sessions" _
+                            title="Active Sessions" 
                             subtitle={`${user.activeSessions} active sessions`} 
                             onTap={() => {}}
                         />
