@@ -48,7 +48,7 @@ export function useDoc<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // If the ref is not ready, set loading to true and wait.
+    // If the ref is not ready, set loading to true, clear old data/errors and wait.
     if (!memoizedDocRef) {
       setIsLoading(true);
       setData(null);
