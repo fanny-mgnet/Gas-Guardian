@@ -3,15 +3,17 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import {
   ChevronRight,
-  User,
-  Settings,
   Shield,
-  CreditCard,
-  Cpu,
-  Database,
   Lock,
+  ShieldCheck,
+  Laptop,
+  SlidersHorizontal,
+  Sun,
+  Ruler,
+  Languages,
   ArrowLeft,
   Pencil,
 } from 'lucide-react';
@@ -61,7 +63,7 @@ function ProfileCard({
                     <p className="font-semibold">{title}</p>
                     {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
                 </div>
-                {action}
+                {action && <div className="ml-auto pl-2">{action}</div>}
             </CardContent>
         </Card>
     );
@@ -72,14 +74,6 @@ function ProfileCard({
 
     return content;
 }
-
-const AsteriskIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v20"/>
-        <path d="m4.93 4.93 14.14 14.14"/>
-        <path d="m4.93 19.07 14.14-14.14"/>
-    </svg>
-);
 
 export default function ProfilePage() {
   return (
@@ -97,48 +91,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="p-4 space-y-2">
-        <ProfileCard 
-            icon={User}
-            title="Personal Information"
-            subtitle="Manage your personal details"
-            action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
-            href="#"
-        />
-        <ProfileCard 
-            icon={AsteriskIcon}
-            title="Emergency Contact"
-            subtitle="+1 555-0456"
-            action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
-            href="#"
-        />
         
-        <ProfileSectionHeader 
-            icon={Settings}
-            title="Account Settings"
-            subtitle="Subscription and device information"
-        />
-
-        <div className="space-y-2">
-            <ProfileCard 
-                icon={CreditCard}
-                title="Subscription Status"
-                subtitle="Premium Plan"
-                action={<Badge variant="secondary" className="bg-green-100 text-green-800 border-none text-xs font-medium">Active</Badge>}
-            />
-             <ProfileCard 
-                icon={Cpu}
-                title="Connected Devices"
-                subtitle="5 devices connected"
-                action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
-                href="/dashboard/devices"
-            />
-             <ProfileCard 
-                icon={Database}
-                title="Data Usage"
-                subtitle="Monthly usage: 2.3 GB"
-            />
-        </div>
-
         <ProfileSectionHeader 
             icon={Shield}
             title="Security"
@@ -149,7 +102,47 @@ export default function ProfilePage() {
                 icon={Lock}
                 title="Change Password"
                 subtitle="Update your account password"
-                action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
+                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
+                href="#"
+            />
+            <ProfileCard 
+                icon={ShieldCheck}
+                title="Two-Factor Authentication"
+                subtitle="Disabled"
+                action={<Switch id="two-factor-auth" />}
+            />
+             <ProfileCard 
+                icon={Laptop}
+                title="Active Sessions"
+                subtitle="3 active sessions"
+                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
+                href="#"
+            />
+        </div>
+
+        <ProfileSectionHeader 
+            icon={SlidersHorizontal}
+            title="App Preferences"
+            subtitle="Customize your experience"
+        />
+        <div className="space-y-2">
+            <ProfileCard 
+                icon={Sun}
+                title="Theme"
+                subtitle="Light Mode"
+                action={<Switch id="theme-mode" />}
+            />
+            <ProfileCard 
+                icon={Ruler}
+                title="Measurement Units"
+                subtitle="Metric (°C, kg)"
+                action={<Switch id="measurement-units" defaultChecked />}
+            />
+            <ProfileCard 
+                icon={Languages}
+                title="Language"
+                subtitle="English"
+                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
                 href="#"
             />
         </div>
