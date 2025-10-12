@@ -83,11 +83,9 @@ export default function Dashboard() {
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemo(() => {
-    // CRITICAL: Ensure both firestore and user are available before creating the query.
-    if (!firestore || !user?.uid) {
+    if (!firestore || !user) {
       return null;
     }
-    // Query alerts across all device subcollections for the current user
     return query(
       collectionGroup(firestore, 'alerts'),
       where('userId', '==', user.uid),

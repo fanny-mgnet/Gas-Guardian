@@ -85,11 +85,19 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
-
+        let path: string;
+        // This is a hacky way to get the path, but it's the only way without access to internal properties
+        try {
+            if (memoizedTargetRefOrQuery.type === 'collection') {
+              path = (memoizedTargetRefOrQuery as CollectionReference).path;
+            } else {
+              // This relies on non-public properties and might break.
+              path = (memoizedTargetRefOrQuery as any)._query.path.canonicalString();
+            }
+        } catch (e) {
+            path = "unknown_path"; // Fallback if path extraction fails
+        }
+        
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path,
