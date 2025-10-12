@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Cpu,
@@ -184,20 +184,62 @@ function DeviceNotificationSettings({
   );
 }
 
+const initialSettings = {
+    criticalAlerts: true,
+    criticalThreshold: 85,
+    warningAlerts: true,
+    warningThreshold: 50,
+    maintenanceReminders: false,
+    pushNotifications: true,
+    smsAlerts: false,
+    emailSummaries: true,
+    quietHours: false,
+    vibrationPattern: 'Default',
+    ledColor: 'blue',
+    notificationSound: 'default',
+};
+
 export default function NotificationsSettingsPage() {
   const { toast } = useToast();
+
+  const [savedSettings, setSavedSettings] = useState(initialSettings);
+  const [currentSettings, setCurrentSettings] = useState(initialSettings);
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    setIsDirty(JSON.stringify(currentSettings) !== JSON.stringify(savedSettings));
+  }, [currentSettings, savedSettings]);
+
+  const handleSettingChange = <K extends keyof typeof initialSettings>(key: K, value: typeof initialSettings[K]) => {
+    setCurrentSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSliderChange = (key: 'criticalThreshold' | 'warningThreshold', value: number[]) => {
+    setCurrentSettings(prev => ({ ...prev, [key]: value[0] }));
+  };
   
-  const [criticalAlerts, setCriticalAlerts] = useState(true);
-  const [criticalThreshold, setCriticalThreshold] = useState(85);
-  const [warningAlerts, setWarningAlerts] = useState(true);
-  const [warningThreshold, setWarningThreshold] = useState(50);
-  const [maintenanceReminders, setMaintenanceReminders] = useState(false);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [smsAlerts, setSmsAlerts] = useState(false);
-  const [emailSummaries, setEmailSummaries] = useState(true);
-  const [quietHours, setQuietHours] = useState(false);
-  const [vibrationPattern, setVibrationPattern] = useState('Default');
-  const [ledColor, setLedColor] = useState('blue');
+  const handleSaveChanges = () => {
+    setSavedSettings(currentSettings);
+    setIsDirty(false);
+    toast({
+      title: 'Changes Saved',
+      description: 'Your notification settings have been updated.',
+    });
+  };
+
+  const handleCancelChanges = () => {
+    setCurrentSettings(savedSettings);
+    setIsDirty(false);
+  };
+
+  const handleReset = () => {
+    setCurrentSettings(initialSettings);
+    setSavedSettings(initialSettings);
+    toast({
+        title: 'Settings Reset',
+        description: 'All settings have been reset to their default values.',
+    });
+  };
 
   const vibrationPatterns = ['Default', 'Short', 'Long', 'Double', 'Triple'];
   const ledColors = [
@@ -207,21 +249,7 @@ export default function NotificationsSettingsPage() {
     { name: 'yellow', hex: 'bg-yellow-500' },
     { name: 'purple', hex: 'bg-purple-500' },
   ];
-
-  const showSaveToast = () => {
-    toast({
-      title: 'Changes Saved',
-      description: 'Your notification settings have been updated.',
-    });
-  };
-
-  const createChangeHandler = <T,>(setter: (value: T) => void) => {
-    return (value: T) => {
-      setter(value);
-      showSaveToast();
-    };
-  };
-
+  
   return (
     <div className="bg-background min-h-screen">
       <header className="bg-card p-4 flex items-center justify-between border-b sticky top-0 z-10">
@@ -231,12 +259,12 @@ export default function NotificationsSettingsPage() {
           </Link>
         </Button>
         <h1 className="text-lg font-semibold">Notifications Settings</h1>
-        <Button variant="ghost" className="text-sm text-primary">
+        <Button variant="ghost" className="text-sm text-primary" onClick={handleReset}>
           Reset
         </Button>
       </header>
 
-      <div className="p-4 space-y-6 pb-24">
+      <div className="p-4 space-y-6 pb-32">
         <Card>
           <CardHeader>
             <CardTitle>Gas Alert Settings</CardTitle>
@@ -245,18 +273,18 @@ export default function NotificationsSettingsPage() {
             <div>
               <SettingsItem
                 title="Critical Alerts"
-                description={`Immediate notifications for dangerous gas levels above ${criticalThreshold}%`}
+                description={`Immediate notifications for dangerous gas levels above ${currentSettings.criticalThreshold}%`}
               >
                 <Switch
-                  checked={criticalAlerts}
-                  onCheckedChange={createChangeHandler(setCriticalAlerts)}
+                  checked={currentSettings.criticalAlerts}
+                  onCheckedChange={(val) => handleSettingChange('criticalAlerts', val)}
                 />
               </SettingsItem>
-              {criticalAlerts && (
+              {currentSettings.criticalAlerts && (
                 <ThresholdSlider
                   label="Critical Threshold"
-                  value={criticalThreshold}
-                  onValueChange={(val) => {setCriticalThreshold(val[0]); showSaveToast();}}
+                  value={currentSettings.criticalThreshold}
+                  onValueChange={(val) => handleSliderChange('criticalThreshold', val)}
                   variant="critical"
                 />
               )}
@@ -267,18 +295,18 @@ export default function NotificationsSettingsPage() {
             <div>
               <SettingsItem
                 title="Warning Levels"
-                description={`Moderate alerts for elevated gas levels above ${warningThreshold}%`}
+                description={`Moderate alerts for elevated gas levels above ${currentSettings.warningThreshold}%`}
               >
                 <Switch
-                  checked={warningAlerts}
-                  onCheckedChange={createChangeHandler(setWarningAlerts)}
+                  checked={currentSettings.warningAlerts}
+                  onCheckedChange={(val) => handleSettingChange('warningAlerts', val)}
                 />
               </SettingsItem>
-              {warningAlerts && (
+              {currentSettings.warningAlerts && (
                 <ThresholdSlider
                   label="Warning Threshold"
-                  value={warningThreshold}
-                  onValueChange={(val) => {setWarningThreshold(val[0]); showSaveToast();}}
+                  value={currentSettings.warningThreshold}
+                  onValueChange={(val) => handleSliderChange('warningThreshold', val)}
                   variant="warning"
                 />
               )}
@@ -291,8 +319,8 @@ export default function NotificationsSettingsPage() {
               description="Regular notifications for device maintenance and calibration"
             >
               <Switch
-                checked={maintenanceReminders}
-                onCheckedChange={createChangeHandler(setMaintenanceReminders)}
+                checked={currentSettings.maintenanceReminders}
+                onCheckedChange={(val) => handleSettingChange('maintenanceReminders', val)}
               />
             </SettingsItem>
           </CardContent>
@@ -307,14 +335,14 @@ export default function NotificationsSettingsPage() {
                 icon={Cpu}
                 name="Living Room Gas Detector"
                 connected={true}
-                onSettingChange={showSaveToast}
+                onSettingChange={() => setIsDirty(true)}
             />
             <Separator />
              <DeviceNotificationSettings
                 icon={HardHat}
                 name="Kitchen Gas Monitor"
                 connected={true}
-                onSettingChange={showSaveToast}
+                onSettingChange={() => setIsDirty(true)}
             />
              <Separator />
              <DeviceNotificationSettings
@@ -322,7 +350,7 @@ export default function NotificationsSettingsPage() {
                 name="Basement Gas Sensor"
                 connected={true}
                 status="Warning"
-                onSettingChange={showSaveToast}
+                onSettingChange={() => setIsDirty(true)}
             />
           </CardContent>
         </Card>
@@ -337,8 +365,8 @@ export default function NotificationsSettingsPage() {
               iconBg="bg-blue-100 dark:bg-blue-900/50"
               title="Push Notifications"
               description="Instant alerts on your device"
-              checked={pushNotifications}
-              onCheckedChange={createChangeHandler(setPushNotifications)}
+              checked={currentSettings.pushNotifications}
+              onCheckedChange={(val) => handleSettingChange('pushNotifications', val)}
             />
             <Separator />
             <NotificationMethodItem
@@ -346,8 +374,8 @@ export default function NotificationsSettingsPage() {
               iconBg="bg-green-100 dark:bg-green-900/50"
               title="SMS Alerts"
               description="Text messages for critical alerts"
-              checked={smsAlerts}
-              onCheckedChange={createChangeHandler(setSmsAlerts)}
+              checked={currentSettings.smsAlerts}
+              onCheckedChange={(val) => handleSettingChange('smsAlerts', val)}
             />
             <Separator />
             <NotificationMethodItem
@@ -355,8 +383,8 @@ export default function NotificationsSettingsPage() {
               iconBg="bg-orange-100 dark:bg-orange-900/50"
               title="Email Summaries"
               description="Daily and weekly reports via email"
-              checked={emailSummaries}
-              onCheckedChange={createChangeHandler(setEmailSummaries)}
+              checked={currentSettings.emailSummaries}
+              onCheckedChange={(val) => handleSettingChange('emailSummaries', val)}
             />
             <div className="pt-2">
                 <AlertDialog>
@@ -390,8 +418,8 @@ export default function NotificationsSettingsPage() {
               description="Disable non-critical notifications"
             >
               <Switch
-                checked={quietHours}
-                onCheckedChange={createChangeHandler(setQuietHours)}
+                checked={currentSettings.quietHours}
+                onCheckedChange={(val) => handleSettingChange('quietHours', val)}
               />
             </SettingsItem>
           </CardContent>
@@ -404,7 +432,7 @@ export default function NotificationsSettingsPage() {
           <CardContent className="space-y-6">
             <div>
               <h3 className="text-sm font-medium mb-2">Notification Sound</h3>
-              <Select defaultValue="default" onValueChange={showSaveToast}>
+              <Select value={currentSettings.notificationSound} onValueChange={(val) => handleSettingChange('notificationSound', val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a sound" />
                 </SelectTrigger>
@@ -423,9 +451,9 @@ export default function NotificationsSettingsPage() {
                 {vibrationPatterns.map((pattern) => (
                   <Button
                     key={pattern}
-                    variant={vibrationPattern === pattern ? 'default' : 'outline'}
+                    variant={currentSettings.vibrationPattern === pattern ? 'default' : 'outline'}
                     size="sm"
-                    onClick={createChangeHandler(() => setVibrationPattern(pattern))}
+                    onClick={() => handleSettingChange('vibrationPattern', pattern)}
                     className="rounded-full"
                   >
                     {pattern}
@@ -440,16 +468,16 @@ export default function NotificationsSettingsPage() {
                 {ledColors.map((color) => (
                   <button
                     key={color.name}
-                    onClick={createChangeHandler(() => setLedColor(color.name))}
+                    onClick={() => handleSettingChange('ledColor', color.name)}
                     className={cn(
                       'h-8 w-8 rounded-full border-2 transition-all flex items-center justify-center',
-                      ledColor === color.name
+                      currentSettings.ledColor === color.name
                         ? 'border-primary'
                         : 'border-transparent'
                     )}
                   >
                     <div className={cn('h-6 w-6 rounded-full', color.hex)}>
-                      {ledColor === color.name && (
+                      {currentSettings.ledColor === color.name && (
                         <Check className="h-4 w-4 text-white m-auto" />
                       )}
                     </div>
@@ -458,13 +486,22 @@ export default function NotificationsSettingsPage() {
               </div>
             </div>
 
-            <Button className="w-full" onClick={showSaveToast}>
+            <Button className="w-full" onClick={() => toast({ title: "Test notification sent!" })}>
               <Bell className="mr-2 h-4 w-4" />
               Test Notification
             </Button>
           </CardContent>
         </Card>
       </div>
+
+       {isDirty && (
+        <div className="fixed bottom-0 left-0 w-full bg-card border-t p-4 z-20">
+          <div className="flex justify-end gap-4 max-w-lg mx-auto">
+            <Button variant="ghost" onClick={handleCancelChanges}>Cancel</Button>
+            <Button onClick={handleSaveChanges}>Save Changes</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
