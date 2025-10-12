@@ -133,6 +133,7 @@ function MonthlySummaryCard({ icon: Icon, iconColor, title, value, subtitle, car
 
 export default function StatisticsPage() {
     const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9, 1)); // October 2025
+    const [activeFilter, setActiveFilter] = useState('Week');
 
     const dailyGasData: Record<string, number> = {
         '2025-10-01': 25, '2025-10-02': 35, '2025-10-03': 42, '2025-10-04': 38, '2025-10-05': 55,
@@ -197,6 +198,18 @@ export default function StatisticsPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="analytics" className="space-y-4">
+            <div className="flex justify-between items-center bg-muted p-1 rounded-full">
+              {['Today', 'Week', 'Month', 'Year'].map(filter => (
+                <Button
+                  key={filter}
+                  variant={activeFilter === filter ? 'default' : 'ghost'}
+                  onClick={() => setActiveFilter(filter)}
+                  className="w-full rounded-full"
+                >
+                  {filter}
+                </Button>
+              ))}
+            </div>
 
             <div className="flex gap-4">
                 <BigStatCard title="Average Level" value="32.5" unit="ppm" />
