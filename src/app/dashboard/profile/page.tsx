@@ -3,84 +3,85 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import {
-  ChevronRight,
-  Shield,
-  Lock,
-  ShieldCheck,
-  Laptop,
-  SlidersHorizontal,
-  Sun,
-  Ruler,
-  Languages,
   ArrowLeft,
   Pencil,
   User as UserIcon,
   Mail,
   Phone,
-  Bell,
-  LogOut,
+  Calendar,
+  ChevronRight,
+  Camera,
+  Asterisk,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-function ProfileSectionHeader({
-  icon: Icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 px-2 pt-6 pb-2">
-      <Icon className="h-5 w-5 text-primary" />
-      <div>
-        <h2 className="font-semibold">{title}</h2>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
-      </div>
-    </div>
-  );
-}
-
-function ProfileCard({
+function InfoCard({
   icon: Icon,
   title,
   subtitle,
   action,
-  href,
+  verified = false,
 }: {
   icon: React.ElementType;
   title: string;
-  subtitle?: string;
+  subtitle: string;
   action?: React.ReactNode;
-  href?: string;
+  verified?: boolean;
 }) {
-    const content = (
-        <Card className="shadow-sm hover:bg-muted/50 transition-colors">
-            <CardContent className="p-4 flex items-center">
-                {Icon && <div className="bg-primary/10 text-primary h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg">
-                    <Icon className="h-5 w-5" />
-                </div>}
-                <div className="ml-4 flex-grow">
-                    <p className="font-semibold">{title}</p>
-                    {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
-                </div>
-                {action && <div className="ml-auto pl-2">{action}</div>}
-            </CardContent>
-        </Card>
-    );
-
-    if (href) {
-        return <Link href={href || '#'}>{content}</Link>;
-    }
-
-    return content;
+  return (
+    <Card className="shadow-sm bg-card">
+      <CardContent className="p-3 flex items-center">
+        <div className="bg-primary/10 text-primary h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="ml-4 flex-grow">
+          <p className="text-xs text-muted-foreground">{title}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-sm">{subtitle}</p>
+            {verified && <Badge className="bg-green-100 text-green-800 border-none text-xs">Verified</Badge>}
+          </div>
+        </div>
+        {action && <div className="ml-auto pl-2">{action}</div>}
+      </CardContent>
+    </Card>
+  );
 }
+
+
+function LinkCard({
+    icon: Icon,
+    title,
+    subtitle,
+    href,
+  }: {
+    icon: React.ElementType;
+    title: string;
+    subtitle: string;
+    href: string;
+  }) {
+    return (
+        <Link href={href}>
+            <Card className="shadow-sm hover:bg-muted/50 transition-colors">
+                <CardContent className="p-4 flex items-center">
+                    <div className="bg-primary/10 text-primary h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg">
+                        <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="ml-4 flex-grow">
+                        <p className="font-semibold">{title}</p>
+                        <p className="text-sm text-muted-foreground">{subtitle}</p>
+                    </div>
+                    <div className="ml-auto pl-2">
+                        <ChevronRight className="text-muted-foreground h-5 w-5" />
+                    </div>
+                </CardContent>
+            </Card>
+        </Link>
+    );
+  }
 
 export default function ProfilePage() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
@@ -100,112 +101,76 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      <div className="p-4 space-y-2">
+      <div className="p-4 space-y-4">
         <div className="flex flex-col items-center py-4">
-            {userAvatar && <Image
-                src={userAvatar.imageUrl.replace('40/40', '80/80')}
-                width={80}
-                height={80}
-                alt={userAvatar.description}
-                data-ai-hint={userAvatar.imageHint}
-                className="rounded-full"
-            />}
-            <h2 className="text-xl font-bold mt-3">John Doe</h2>
-            <p className="text-sm text-muted-foreground">john.doe@example.com</p>
+            <div className="relative">
+                {userAvatar && <Image
+                    src={userAvatar.imageUrl.replace('40/40', '96/96')}
+                    width={96}
+                    height={96}
+                    alt={userAvatar.description}
+                    data-ai-hint={userAvatar.imageHint}
+                    className="rounded-full"
+                />}
+                <Button size="icon" className="absolute bottom-0 right-0 h-8 w-8 rounded-full border-2 border-card">
+                    <Camera className="h-4 w-4" />
+                </Button>
+            </div>
         </div>
         
-        <ProfileSectionHeader 
-            icon={UserIcon}
-            title="Personal Information"
-            subtitle="Manage your personal details"
-        />
-        <div className="space-y-2">
-            <ProfileCard 
-                icon={Mail}
-                title="Email"
-                subtitle="john.doe@example.com"
-                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
-                href="#"
+        <div className="space-y-3">
+            <InfoCard 
+                icon={UserIcon}
+                title="Full Name"
+                subtitle="John Doe"
+                action={
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                }
             />
-            <ProfileCard 
+            <InfoCard 
+                icon={Mail}
+                title="Email Address"
+                subtitle="john.doe@example.com"
+                verified
+                action={
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                }
+            />
+            <InfoCard 
                 icon={Phone}
                 title="Phone Number"
                 subtitle="+1 234 567 890"
-                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
-                href="#"
+                action={
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                }
+            />
+            <InfoCard 
+                icon={Calendar}
+                title="Account Created"
+                subtitle="January 15, 2024"
             />
         </div>
 
-        <ProfileSectionHeader 
-            icon={Shield}
-            title="Security"
-            subtitle="Protect your account"
-        />
-        <div className="space-y-2">
-            <ProfileCard 
-                icon={Lock}
-                title="Change Password"
-                subtitle="Update your account password"
-                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
+        <div className="space-y-3 pt-4">
+            <LinkCard 
+                icon={UserIcon}
+                title="Personal Information"
+                subtitle="Manage your personal details"
                 href="#"
             />
-            <ProfileCard 
-                icon={ShieldCheck}
-                title="Two-Factor Authentication"
-                subtitle="Disabled"
-                action={<Switch id="two-factor-auth" />}
-            />
-             <ProfileCard 
-                icon={Laptop}
-                title="Active Sessions"
-                subtitle="3 active sessions"
-                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
+             <LinkCard 
+                icon={Asterisk}
+                title="Emergency Contact"
+                subtitle="Manage your emergency contacts"
                 href="#"
             />
         </div>
-
-        <ProfileSectionHeader 
-            icon={SlidersHorizontal}
-            title="App Preferences"
-            subtitle="Customize your experience"
-        />
-        <div className="space-y-2">
-            <ProfileCard 
-                icon={Bell}
-                title="Notifications"
-                subtitle="Manage your notifications"
-                action={<Switch id="notifications" defaultChecked />}
-            />
-            <ProfileCard 
-                icon={Sun}
-                title="Theme"
-                subtitle="Light Mode"
-                action={<Switch id="theme-mode" />}
-            />
-            <ProfileCard 
-                icon={Ruler}
-                title="Measurement Units"
-                subtitle="Metric"
-                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
-                href="#"
-            />
-            <ProfileCard 
-                icon={Languages}
-                title="Language"
-                subtitle="English"
-                action={<ChevronRight className="text-muted-foreground h-5 w-5" />}
-                href="#"
-            />
-        </div>
-
-        <div className="pt-6">
-            <ProfileCard 
-                icon={LogOut}
-                title="Logout"
-                href="#"
-            />
-        </div>
-
       </div>
     </div>
   );
