@@ -54,7 +54,7 @@ export function useDoc<T = any>(
       setIsLoading(true);
       setData(null);
       setError(null);
-      return;
+      return; // <-- CRITICAL: Stop execution if doc ref is not ready.
     }
 
     setIsLoading(true);

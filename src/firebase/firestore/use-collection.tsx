@@ -55,7 +55,7 @@ export function useCollection<T = any>(
       setIsLoading(true);
       setData(null);
       setError(null);
-      return;
+      return; // <-- CRITICAL: Stop execution if query is not ready.
     }
 
     setIsLoading(true);
