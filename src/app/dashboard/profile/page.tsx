@@ -1,10 +1,4 @@
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import {
   Card,
   CardContent,
 } from '@/components/ui/card';
@@ -12,57 +6,71 @@ import { Badge } from '@/components/ui/badge';
 import {
   ChevronRight,
   User,
-  Mail,
-  Phone,
-  Calendar,
-  Pencil,
+  Settings,
+  Shield,
+  CreditCard,
+  Cpu,
+  Database,
+  Lock,
   ArrowLeft,
-  Camera,
-  Info,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
-function ProfileInfoRow({
+function ProfileSectionHeader({
   icon: Icon,
-  label,
-  value,
-  verified,
-  editable = true,
+  title,
+  subtitle,
 }: {
   icon: React.ElementType;
-  label: string;
-  value: string;
-  verified?: boolean;
-  editable?: boolean;
+  title: string;
+  subtitle: string;
 }) {
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4 flex items-center">
-        <div className="flex items-center gap-4">
-          <div className="bg-primary text-primary-foreground h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-full">
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <div className="flex items-center gap-2">
-                <p className="font-semibold">{value}</p>
-                {verified && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-none text-xs font-medium">
-                        <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1"><path d="M9.5 4.5L5.25 8.75L3.5 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                        Verified
-                    </Badge>
-                )}
-            </div>
-          </div>
-        </div>
-        {editable && (
-          <Button variant="ghost" size="icon" className="ml-auto text-muted-foreground h-10 w-10 rounded-full">
-            <Pencil className="h-4 w-4" />
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-4 px-2 pt-6 pb-2">
+      <Icon className="h-5 w-5 text-primary" />
+      <div>
+        <h2 className="font-semibold">{title}</h2>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
   );
+}
+
+function ProfileCard({
+  icon: Icon,
+  title,
+  subtitle,
+  action,
+  href,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+  href?: string;
+}) {
+    const content = (
+        <Card className="shadow-sm hover:bg-muted/50 transition-colors">
+            <CardContent className="p-4 flex items-center">
+                <div className="bg-primary/10 text-primary h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg">
+                    <Icon className="h-5 w-5" />
+                </div>
+                <div className="ml-4 flex-grow">
+                    <p className="font-semibold">{title}</p>
+                    {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+                </div>
+                {action}
+            </CardContent>
+        </Card>
+    );
+
+    if (href) {
+        return <Link href={href}>{content}</Link>;
+    }
+
+    return content;
 }
 
 const AsteriskIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -73,11 +81,10 @@ const AsteriskIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-
 export default function ProfilePage() {
   return (
     <div className="bg-muted/30 min-h-screen">
-      <div className="bg-card p-4 flex items-center justify-between border-b">
+      <div className="bg-card p-4 flex items-center justify-between border-b sticky top-0 z-10">
         <Button variant="ghost" size="icon" asChild>
             <Link href="/dashboard">
                 <ArrowLeft />
@@ -89,73 +96,64 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      <div className="p-4 space-y-6">
-        <div className="flex justify-center items-center py-4">
-            <div className="relative">
-                <div className="absolute inset-0 bg-primary/10 rounded-full -m-2"></div>
-                <Avatar className="w-24 h-24 border-4 border-background shadow-md">
-                    <AvatarImage src="https://picsum.photos/seed/avatar2/100/100" />
-                    <AvatarFallback>SJ</AvatarFallback>
-                </Avatar>
-                <Button
-                    size="icon"
-                    className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-primary"
-                >
-                    <Camera className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-
-        <div className="w-full space-y-3">
-          <ProfileInfoRow
+      <div className="p-4 space-y-2">
+        <ProfileCard 
             icon={User}
-            label="Full Name"
-            value="Sarah Johnson"
-          />
-          <ProfileInfoRow
-            icon={Mail}
-            label="Email Address"
-            value="sarah.johnson@email.com"
-            verified
-          />
-          <ProfileInfoRow
-            icon={Phone}
-            label="Phone Number"
-            value="+1 555-0123"
-          />
-          <ProfileInfoRow
-            icon={Calendar}
-            label="Account Created"
-            value="January 15, 2024"
-            editable={false}
-          />
+            title="Personal Information"
+            subtitle="Manage your personal details"
+            action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
+            href="#"
+        />
+        <ProfileCard 
+            icon={AsteriskIcon}
+            title="Emergency Contact"
+            subtitle="+1 555-0456"
+            action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
+            href="#"
+        />
+        
+        <ProfileSectionHeader 
+            icon={Settings}
+            title="Account Settings"
+            subtitle="Subscription and device information"
+        />
+
+        <div className="space-y-2">
+            <ProfileCard 
+                icon={CreditCard}
+                title="Subscription Status"
+                subtitle="Premium Plan"
+                action={<Badge variant="secondary" className="bg-green-100 text-green-800 border-none text-xs font-medium">Active</Badge>}
+            />
+             <ProfileCard 
+                icon={Cpu}
+                title="Connected Devices"
+                subtitle="5 devices connected"
+                action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
+                href="/dashboard/devices"
+            />
+             <ProfileCard 
+                icon={Database}
+                title="Data Usage"
+                subtitle="Monthly usage: 2.3 GB"
+            />
         </div>
 
-        <div className="w-full space-y-2">
-            <Card className="shadow-sm">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <div className="text-primary">
-                        <Info className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <p className="font-semibold">Personal Information</p>
-                        <p className="text-sm text-muted-foreground">Manage your personal details</p>
-                    </div>
-                </CardContent>
-            </Card>
-
-             <Card className="shadow-sm">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <div className="text-primary">
-                        <AsteriskIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <p className="font-semibold">Emergency Contact</p>
-                    </div>
-                    <ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />
-                </CardContent>
-            </Card>
+        <ProfileSectionHeader 
+            icon={Shield}
+            title="Security"
+            subtitle="Protect your account"
+        />
+        <div className="space-y-2">
+            <ProfileCard 
+                icon={Lock}
+                title="Change Password"
+                subtitle="Update your account password"
+                action={<ChevronRight className="ml-auto text-muted-foreground h-5 w-5" />}
+                href="#"
+            />
         </div>
+
       </div>
     </div>
   );
