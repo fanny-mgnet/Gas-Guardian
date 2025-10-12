@@ -49,7 +49,7 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // Definitive guard against race conditions.
+    // Definitive guard against race conditions and null references.
     // If the query is not ready, set loading to true, clear old data/errors and wait.
     if (!memoizedTargetRefOrQuery) {
       setIsLoading(true);

@@ -48,7 +48,7 @@ export function useDoc<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // Definitive guard against race conditions.
+    // Definitive guard against race conditions and null references.
     // If the ref is not ready, set loading to true, clear old data/errors and wait.
     if (!memoizedDocRef) {
       setIsLoading(true);
