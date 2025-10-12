@@ -85,4 +85,7 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  .auth-gradient {
+    @apply bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900;
+  }
 }
