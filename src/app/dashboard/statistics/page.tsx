@@ -9,16 +9,12 @@ import {
   ShieldCheck,
   AlertTriangle,
   TrendingUp,
-  ArrowUp,
+  TrendingDown,
   ChevronLeft,
   ChevronRight,
-  Flame,
-  CheckCircle2,
-  AlertCircle,
   Shield,
   ShieldAlert,
   BarChartHorizontal,
-  TrendingDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -48,7 +44,36 @@ const weeklyTrendData = [
     { day: 'Fri', value: 51 },
     { day: 'Sat', value: 48 },
     { day: 'Sun', value: 55 },
-];  
+];
+
+const deviceComparisonData = [
+    { name: 'Kitchen', value: 42, fill: 'var(--color-kitchen)' },
+    { name: 'Living Room', value: 38, fill: 'var(--color-living-room)' },
+    { name: 'Basement', value: 68, fill: 'var(--color-basement)' },
+    { name: 'Garage', value: 52, fill: 'var(--color-garage)' },
+];
+  
+const deviceComparisonConfig = {
+    value: {
+        label: "Gas Level",
+    },
+    kitchen: {
+        label: "Kitchen",
+        color: "#3b82f6",
+    },
+    'living-room': {
+        label: "Living Room",
+        color: "#10b981",
+    },
+    basement: {
+        label: "Basement",
+        color: "#ef4444",
+    },
+    garage: {
+        label: "Garage",
+        color: "#f97316",
+    },
+}
 
 function SmallStatCard({
   icon: Icon,
@@ -272,6 +297,54 @@ export default function StatisticsPage() {
                 iconBg="bg-yellow-100 dark:bg-yellow-900/50"
               />
             </div>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Device Comparison</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                    <div className="h-[200px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={deviceComparisonData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))',
+                                        borderRadius: 'var(--radius)',
+                                    }}
+                                    cursor={{fill: 'hsl(var(--muted))', radius: 'var(--radius)'}}
+                                />
+                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                    {deviceComparisonData.map((entry) => (
+                                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="flex justify-center items-center flex-wrap gap-4 mt-4 text-xs">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.kitchen.color}}></span>
+                            <span>Kitchen Sensor (42.5 ppm)</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig['living-room'].color}}></span>
+                            <span>Living Room (38.2 ppm)</span>
+                        </div>
+                         <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.basement.color}}></span>
+                            <span>Basement (68.3 ppm)</span>
+                        </div>
+                         <div className="flex items-center gap-2 text-muted-foreground">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.garage.color}}></span>
+                            <span>Garage (52.7 ppm)</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
           </TabsContent>
           <TabsContent value="calendar" className="space-y-4">
