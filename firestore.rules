@@ -52,7 +52,7 @@ service cloud.firestore {
 
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if false; // Listing users is not allowed.
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && isOwner(userId);
       allow update: if isSignedIn() && isOwner(userId);
       allow delete: if isSignedIn() && isOwner(userId);
     }
@@ -95,10 +95,10 @@ service cloud.firestore {
        }
 
       allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId && isExistingOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
     }
 
     /**
@@ -138,11 +138,11 @@ service cloud.firestore {
            return exists(/databases/$(database)/documents/users/$(userId));
        }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId && isExistingOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && isExistingOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
     }
   }
 }
