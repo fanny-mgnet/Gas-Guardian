@@ -53,7 +53,7 @@ export function GasLevelKnob({ gasLevel, lastUpdated }: GasLevelKnobProps) {
             {/* Background Circle */}
             <circle
               className="stroke-current text-gray-200 dark:text-gray-700"
-              stroke-opacity="0.5"
+              strokeOpacity="0.5"
               cx="60"
               cy="60"
               r="52"
