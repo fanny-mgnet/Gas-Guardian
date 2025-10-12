@@ -125,9 +125,34 @@ export default function ProfilePage() {
       </div>
 
       <div className="p-4">
+
+        {/* User Avatar Section */}
+        <div className="flex flex-col items-center pt-4 pb-6">
+            <div className="relative mb-3">
+                {userAvatar && <Image
+                    src={userAvatar.imageUrl}
+                    width={80}
+                    height={80}
+                    alt={userAvatar.description}
+                    data-ai-hint={userAvatar.imageHint}
+                    className="rounded-full border-4 border-background shadow-md"
+                />}
+                <Button variant="outline" size="icon" className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-card">
+                    <Camera className="h-4 w-4"/>
+                    <span className="sr-only">Upload new photo</span>
+                </Button>
+            </div>
+            <h2 className="text-xl font-bold">Jane Doe</h2>
+            <p className="text-sm text-muted-foreground">Premium Member</p>
+        </div>
+
         {/* Personal Information Section */}
         <SectionHeader icon={UserIcon} title="Personal Information" subtitle="Manage your personal details" />
         <div className="space-y-3">
+            <InfoCard icon={UserIcon} title="Full Name" subtitle="Jane Doe" action={<Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="h-4 w-4" /></Button>} />
+            <InfoCard icon={Mail} title="Email Address" subtitle="jane.doe@example.com" action={<Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="h-4 w-4" /></Button>} verified />
+            <InfoCard icon={Phone} title="Phone Number" subtitle="+1 555-1234" action={<Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="h-4 w-4" /></Button>} />
+            <InfoCard icon={Calendar} title="Joined" subtitle="October 2023" />
              <LinkCard 
                 icon={Asterisk}
                 title="Emergency Contact"
