@@ -50,6 +50,7 @@ export function useCollection<T = any>(
 
   useEffect(() => {
     // If the query is not ready, set loading to true, clear old data/errors and wait.
+    // This is the definitive guard against race conditions.
     if (!memoizedTargetRefOrQuery) {
       setIsLoading(true);
       setData(null);

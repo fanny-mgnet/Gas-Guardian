@@ -49,6 +49,7 @@ export function useDoc<T = any>(
 
   useEffect(() => {
     // If the ref is not ready, set loading to true, clear old data/errors and wait.
+    // This is the definitive guard against race conditions.
     if (!memoizedDocRef) {
       setIsLoading(true);
       setData(null);
