@@ -25,6 +25,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -326,10 +337,26 @@ export default function NotificationsSettingsPage() {
               onCheckedChange={setEmailSummaries}
             />
             <div className="pt-2">
-                <Button variant="outline" className="w-full">
-                    <SettingsIcon className="mr-2 h-4 w-4" />
-                    Manage Permissions
-                </Button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                            <SettingsIcon className="mr-2 h-4 w-4" />
+                            Manage Permissions
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Notification Permissions</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            To receive notifications, please enable permissions in your device settings. This will allow the app to send you important gas alerts and device status updates.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction>Open Settings</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
           </CardContent>
         </Card>
