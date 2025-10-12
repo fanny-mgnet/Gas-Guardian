@@ -6,6 +6,7 @@ import {
   BarChart2,
   User,
   Bell,
+  AreaChart,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -25,7 +26,7 @@ export const navItems = [
     {
         href: '/dashboard/statistics',
         label: 'Statistics',
-        icon: BarChart2,
+        icon: AreaChart,
         isActive: (pathname: string) => pathname.startsWith('/dashboard/statistics'),
     },
     {
