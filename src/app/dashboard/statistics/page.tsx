@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Calendar } from '@/components/ui/calendar';
 import { format, addMonths, subMonths } from 'date-fns';
+import { ChartContainer } from '@/components/ui/chart';
 
 const weeklyTrendData = [
     { day: 'Mon', value: 35 },
@@ -303,28 +304,26 @@ export default function StatisticsPage() {
                     <CardTitle>Device Comparison</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                    <div className="h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={deviceComparisonData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'hsl(var(--background))',
-                                        border: '1px solid hsl(var(--border))',
-                                        borderRadius: 'var(--radius)',
-                                    }}
-                                    cursor={{fill: 'hsl(var(--muted))', radius: 'var(--radius)'}}
-                                />
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {deviceComparisonData.map((entry) => (
-                                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                    <ChartContainer config={deviceComparisonConfig} className="h-[200px] w-full">
+                        <BarChart data={deviceComparisonData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'var(--radius)',
+                                }}
+                                cursor={{fill: 'hsl(var(--muted))', radius: 'var(--radius)'}}
+                            />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                {deviceComparisonData.map((entry) => (
+                                    <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ChartContainer>
                     <div className="flex justify-center items-center flex-wrap gap-4 mt-4 text-xs">
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.kitchen.color}}></span>
@@ -428,3 +427,5 @@ export default function StatisticsPage() {
     </div>
   );
 }
+
+    
