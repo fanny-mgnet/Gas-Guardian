@@ -1,3 +1,14 @@
+/**
+ * @file Firestore Security Rules for SmartGas Guardian.
+ *
+ * @core_philosophy This ruleset enforces a strict user-ownership model. Users can only access their own profile data,
+ *   and they can only manage devices and alerts associated with their account. There is no administrative override.
+ * @data_structure Data is nested under /users/{userId}, with devices and alerts as subcollections.
+ * @key_security_decisions User listing is disallowed for privacy. Device and alert information is strictly controlled
+ *   by user ownership. The system is designed to prevent any cross-user data access.
+ * @denormalization Authorization relies on the `userId` field present in `Device` and `Alert` documents, which is
+ *   compared against the authenticated user's `uid`.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -5,82 +16,84 @@ service cloud.firestore {
     /**
      * @description Controls access to user profile information.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user can create their own profile if the userId matches their auth UID.
-     * @allow (get, update, delete) - Authenticated user can only access their own profile.
-     * @deny (list) - Listing all users is not allowed.
-     * @deny (create) - A user cannot create a profile with a userId that doesn't match their auth UID.
-     * @principle Enforces document ownership, restricts user listing, and validates userId on create.
+     * @allow (create) Authenticated user can create their own profile.
+     * @deny (create) Creating a user profile with an ID that doesn't match the authenticated user's ID.
+     * @allow (get) Authenticated user can read their own profile.
+     * @deny (get) Unauthenticated user cannot read any user profile.
+     * @allow (update) Authenticated user can update their own profile.
+     * @deny (update) Updating a profile with a mismatched user ID.
+     * @allow (delete) Authenticated user can delete their own profile.
+     * @deny (delete) Deleting a profile with a mismatched user ID.
+     * @allow (list) Listing all users is not allowed.
+     * @principle Enforces document ownership for writes, restricts access to a user's own data tree, validates relational integrity between documents.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      // Allows user to read their own profile.
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
       allow get: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
       allow list: if false;
-
-      // Allows a user to create their profile, but only if the userId matches their auth UID.
-      allow create: if isSignedIn() && isOwner(userId);
-
-      // Allows a user to update and delete their own profile.
-      allow update, delete: if isSignedIn() && isOwner(userId);
     }
 
     /**
      * @description Controls access to devices owned by a user.
      * @path /users/{userId}/devices/{deviceId}
-     * @allow (create, get, list, update, delete) - Authenticated user can manage their own devices.
-     * @deny (create, get, list, update, delete) - Another user cannot manage devices for a different user.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) Authenticated user can create a device under their profile.
+     * @deny (create) Creating a device with a userId that doesn't match the authenticated user's ID.
+     * @allow (get) Authenticated user can read their own devices.
+     * @deny (get) Unauthenticated user cannot read any device.
+     * @allow (update) Authenticated user can update their own devices.
+     * @deny (update) Updating a device with a mismatched user ID.
+     * @allow (delete) Authenticated user can delete their own devices.
+     * @deny (delete) Deleting a device with a mismatched user ID.
+     * @allow (list) Authenticated user can list their own devices.
+     * @deny (list) Unauthenticated user cannot list any devices.
+     * @principle Enforces document ownership for writes, restricts access to a user's own data tree, validates relational integrity between documents.
      */
     match /users/{userId}/devices/{deviceId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      // Only the owner can read their devices.
-      allow get, list: if isSignedIn() && isOwner(userId);
-
-      // Only the owner can create a device, and only if the userId matches.
-      allow create: if isSignedIn() && isOwner(userId);
-
-      // Only the owner can update or delete a device.
-      allow update, delete: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow get: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
     }
 
     /**
-     * @description Controls access to alerts for a specific device.
+     * @description Controls access to alerts generated by a device.
      * @path /users/{userId}/devices/{deviceId}/alerts/{alertId}
-     * @allow (create, get, list, update, delete) - Authenticated user can manage alerts for their own devices.
-     * @deny (create, get, list, update, delete) - Another user cannot manage alerts for a different user's devices.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) Authenticated user can create an alert under their device.
+     * @deny (create) Creating an alert with a userId that doesn't match the authenticated user's ID.
+     * @allow (get) Authenticated user can read their own alerts.
+     * @deny (get) Unauthenticated user cannot read any alert.
+     * @allow (update) Authenticated user can update their own alerts.
+     * @deny (update) Updating an alert with a mismatched user ID.
+     * @allow (delete) Authenticated user can delete their own alerts.
+     * @deny (delete) Deleting an alert with a mismatched user ID.
+     * @allow (list) Authenticated user can list their own alerts.
+     * @deny (list) Unauthenticated user cannot list any alerts.
+     * @principle Enforces document ownership for writes, restricts access to a user's own data tree, validates relational integrity between documents.
      */
     match /users/{userId}/devices/{deviceId}/alerts/{alertId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      // Only the owner can read alerts for their devices.
-      allow get, list: if isSignedIn() && isOwner(userId);
-
-      // Only the owner can create an alert, and only if the userId matches.
-      allow create: if isSignedIn() && isOwner(userId);
-
-      // Only the owner can update or delete an alert.
-      allow update, delete: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow get: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
     }
+  }
+
+  // Helper function to determine if the user is signed in
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  // Helper function to determine if the user is the owner of the resource
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  // Helper function to determine if the user is the existing owner of the resource
+  function isExistingOwner(userId) {
+    return isSignedIn() && isOwner(userId) && resource != null;
   }
 }
