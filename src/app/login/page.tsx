@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Mail, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
-import { useUser } from '@/supabase/auth';
-import { supabase } from '@/supabase/client';
+import { useUser, useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,7 +26,8 @@ function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { ic
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
@@ -39,12 +40,16 @@ export default function LoginPage() {
 
 
  const handleLogin = async () => {
-   try {
-     const { error } = await supabase.auth.signInWithPassword({
-       email,
-       password,
+   if (!auth) {
+      toast({
+       variant: 'destructive',
+       title: 'Login Failed',
+       description: 'Authentication service is not available.',
      });
-     if (error) throw error;
+     return;
+   }
+   try {
+     await signInWithEmailAndPassword(auth, email, password);
      // Let the useEffect handle the redirect
    } catch (error: any) {
      toast({

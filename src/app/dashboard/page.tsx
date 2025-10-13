@@ -9,12 +9,11 @@ import type { Alert, Device } from '@/lib/types';
 import { AddDeviceDialog } from '@/components/add-device-dialog';
 import Link from 'next/link';
 import { Header } from '@/components/header';
-import { useCollection } from '@/supabase/use-collection';
-import { useUser } from '@/supabase/auth';
-import { supabase } from '@/supabase/client';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useMemo } from 'react';
+import { collection, collectionGroup, query, where, orderBy, limit } from 'firebase/firestore';
 
 function DashboardLoading() {
   return (
@@ -72,44 +71,36 @@ function DashboardLoading() {
 }
 
 export default function Dashboard() {
-  const { user, isLoading: isUserLoading, error: userError } = useUser();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
 
-  const devicesTableName = useMemo(() => {
-    if (isUserLoading || !user?.id) {
+  const devicesRef = useMemo(() => {
+    if (isUserLoading || !firestore || !user?.uid) {
       return null;
     }
-    return `devices_${user.id}`; // Assuming a table per user for devices, or a 'devices' table with a 'userId' column
-  }, [user?.id, isUserLoading]);
-  const { data: devices, isLoading: devicesLoading, error: devicesError } = useCollection<Device>(devicesTableName);
+    return collection(firestore, 'users', user.uid, 'devices');
+  }, [firestore, user?.uid, isUserLoading]);
+  const { data: devices, isLoading: devicesLoading, error: devicesError } = useCollection<Device>(devicesRef);
 
-  const alertsTableName = useMemo(() => {
-    if (isUserLoading || !user?.id) {
+  const alertsRef = useMemo(() => {
+    if (isUserLoading || !firestore || !user?.uid) {
       return null;
     }
-    return 'alerts'; // Assuming a single alerts table with a 'userId' column
-  }, [user?.id, isUserLoading]);
+    // This query gets all alerts for the current user across all their devices
+    return query(
+      collectionGroup(firestore, 'alerts'), 
+      where('userId', '==', user.uid)
+    );
+  }, [firestore, user?.uid, isUserLoading]);
 
-  const { data: allAlerts, isLoading: alertsLoading, error: alertsError } = useCollection<Alert>(alertsTableName);
-
-  // Filter alerts by userId if using a single alerts table
-  const filteredAlerts = useMemo(() => {
-    if (!allAlerts || !user?.id) return null;
-    return allAlerts.filter(alert => (alert as any).userId === user.id);
-  }, [allAlerts, user?.id]);
-
-  if (userError) {
-    console.error("Dashboard: User loading error:", userError);
-    return <div className="flex items-center justify-center min-h-screen text-red-500">Error loading user data.</div>;
-  }
-
+  const { data: allAlerts, isLoading: alertsLoading, error: alertsError } = useCollection<Alert>(alertsRef);
+  
   if (devicesError) {
     console.error("Dashboard: Devices loading error:", devicesError);
-    return <div className="flex items-center justify-center min-h-screen text-red-500">Error loading devices.</div>;
   }
 
   if (alertsError) {
     console.error("Dashboard: Alerts loading error:", alertsError);
-    return <div className="flex items-center justify-center min-h-screen text-red-500">Error loading alerts.</div>;
   }
 
   if (devicesLoading || alertsLoading || isUserLoading) {
@@ -117,8 +108,10 @@ export default function Dashboard() {
   }
 
   const getLatestAlert = () => {
-    if (!filteredAlerts || filteredAlerts.length === 0) return null;
-    return filteredAlerts[0];
+    if (!allAlerts || allAlerts.length === 0) return null;
+    // Sort to find the most recent alert
+    const sortedAlerts = [...allAlerts].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return sortedAlerts[0];
   }
 
   const latestAlert = getLatestAlert();
@@ -129,14 +122,13 @@ export default function Dashboard() {
       gasLevel = sensorData.gas_value;
     } catch (e) {
       console.error("Dashboard: Error parsing sensorData JSON:", e);
-      // Optionally, set a default gasLevel or display an error to the user
     }
   }
   const lastUpdated = latestAlert?.createdAt;
 
   const getLatestAlertForDevice = (deviceId: string): Alert | undefined => {
-    if (!filteredAlerts) return undefined;
-    const deviceAlerts = filteredAlerts.filter(alert => alert.deviceId === deviceId);
+    if (!allAlerts) return undefined;
+    const deviceAlerts = allAlerts.filter(alert => alert.deviceId === deviceId);
     if (deviceAlerts.length === 0) return undefined;
     return deviceAlerts.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
   };

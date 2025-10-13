@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import './globals.css';
-import { SupabaseProvider } from '@/supabase/provider';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'SmartGas Guardian',
@@ -26,9 +26,9 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased min-h-screen bg-background')}>
-        <SupabaseProvider>
+        <FirebaseClientProvider>
           {children}
-        </SupabaseProvider>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
