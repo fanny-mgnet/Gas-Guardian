@@ -63,7 +63,10 @@ export default function DevicesPage() {
   const { user, isUserLoading } = useUser();
 
   const devicesRef = useMemo(() => {
-    if (isUserLoading || !firestore || !user?.uid) return null;
+    // CRITICAL: Do not create the query until the user is loaded and their UID is available.
+    if (isUserLoading || !firestore || !user?.uid) {
+      return null;
+    }
     return collection(firestore, 'users', user.uid, 'devices');
   }, [firestore, user?.uid, isUserLoading]);
 
