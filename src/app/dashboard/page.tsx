@@ -75,17 +75,23 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
 
   const devicesRef = useMemo(() => {
-    // CRITICAL: Do not create the query until the user is loaded and their UID is available.
-    if (isUserLoading || !firestore || !user?.uid) {
+    // CRITICAL: Wait for user loading to finish before checking for user.
+    if (isUserLoading) {
+      return null;
+    }
+    if (!firestore || !user?.uid) {
       return null;
     }
     return collection(firestore, 'users', user.uid, 'devices');
-  }, [firestore, user?.uid, isUserLoading]);
+  }, [firestore, user, isUserLoading]);
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemo(() => {
-    // CRITICAL: Do not create the query until the user is loaded and their UID is available.
-    if (isUserLoading || !firestore || !user?.uid) {
+    // CRITICAL: Wait for user loading to finish before checking for user.
+    if (isUserLoading) {
+      return null;
+    }
+    if (!firestore || !user?.uid) {
       return null;
     }
     return query(
@@ -94,7 +100,7 @@ export default function Dashboard() {
       orderBy('createdAt', 'desc'),
       limit(50)
     );
-  }, [firestore, user?.uid, isUserLoading]);
+  }, [firestore, user, isUserLoading]);
   const { data: allAlerts, isLoading: alertsLoading } = useCollection<Alert>(alertsQuery);
 
 
