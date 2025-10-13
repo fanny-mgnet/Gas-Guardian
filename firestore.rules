@@ -19,6 +19,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow collection group queries for 'alerts' for authenticated users.
+    // This rule is necessary for collectionGroup queries to pass initial security checks.
+    match /{path=**}/alerts/{alertId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwnerAlert(resource.data.userId);
+      allow delete: if isSignedIn() && isExistingOwnerAlert(resource.data.userId);
+    }
 
     /**
      * @description Allows users to read and write their own user document.

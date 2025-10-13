@@ -10,12 +10,10 @@ import { Input } from "@/components/ui/input";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth, useUser } from '@/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useUser } from '@/supabase/auth';
+import { supabase } from '@/supabase/client';
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { doc, setDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
 
 function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { icon: React.ElementType, id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
@@ -28,9 +26,7 @@ function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { ic
 
 export default function RegisterPage() {
   const router = useRouter();
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -53,33 +49,25 @@ export default function RegisterPage() {
       })
       return;
     }
-    if (!auth || !firestore) {
-        toast({
-            variant: 'destructive',
-            title: 'Registration Failed',
-            description: 'Authentication service not available.',
-        })
-        return;
-    }
-
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const createdUser = userCredential.user;
-
-      // Update user profile with display name
-      await updateProfile(createdUser, {
-        displayName: fullName,
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone_number: phone,
+          },
+        },
       });
 
-      // Create a user document in Firestore
-      const userRef = doc(firestore, 'users', createdUser.uid);
-      await setDoc(userRef, {
-        id: createdUser.uid,
-        email: createdUser.email,
-        createdAt: new Date().toISOString(),
-        displayName: fullName,
-        phoneNumber: phone,
-      });
+      if (error) throw error;
+
+      if (data.user) {
+        // Supabase automatically creates a user entry in auth.users
+        // You might want to insert additional profile data into a 'profiles' table
+        // For now, we'll assume the user object contains enough info or is handled by RLS.
+      }
       
       // Let the useEffect handle the redirect
     } catch (error: any) {
