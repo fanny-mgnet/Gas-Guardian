@@ -68,7 +68,7 @@ export default function DevicesPage() {
       return null;
     }
     return collection(firestore, 'users', user.uid, 'devices');
-  }, [firestore, user, isUserLoading]);
+  }, [firestore, user?.uid, isUserLoading]);
 
   const { data: devices, isLoading } = useCollection<Device>(devicesRef);
 
