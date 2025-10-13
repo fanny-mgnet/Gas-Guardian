@@ -1,96 +1,69 @@
-/**
- * @fileoverview Firestore Security Rules for SmartGas Guardian.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for all data. Users can only
- * access their own profile information, devices, and alerts. There are no administrative
- * roles or shared access scenarios in this initial version.
- *
- * Data Structure:
- * Data is organized hierarchically under `/users/{userId}`, with devices stored in a
- * subcollection `/users/{userId}/devices/{deviceId}` and alerts in
- * `/users/{userId}/devices/{deviceId}/alerts/{alertId}`. This structure facilitates
- * owner-only access control.
- *
- * Key Security Decisions:
- * - Users can only create their own user document using their UID as the document ID.
- * - Users cannot list all users.
- * - All device and alert data is strictly owned by the user who created it.
- * - No public data access is allowed.
- *
- * Denormalization for Authorization:
- * The `userId` field is denormalized into both the `/devices` and `/alerts` documents to
- * simplify security rules and avoid costly `get()` calls. This allows direct ownership
- * checks at the device and alert level.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secure user profiles. Users can only read and write their own profile.
+     * @description Checks if the request is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the resource.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the existing owner of the resource.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId);
+    }
+
+    /**
+     * @description Defines a helper function to check if the userId in the request data matches the userId in the path
+     */
+    function isCreatingOwnedBy(userId) {
+        return request.resource.data.userId == userId;
+    }
+
+    /**
+     * @description Stores user profile information.
      * @path /users/{userId}
-     * @allow (create) - User with UID 'user_abc' can create their own profile document at /users/user_abc.
-     * @allow (get) - User with UID 'user_abc' can read their own profile document at /users/user_abc.
-     * @allow (update) - User with UID 'user_abc' can update their own profile document at /users/user_abc.
-     * @allow (delete) - User with UID 'user_abc' can delete their own profile document at /users/user_abc.
-     * @deny (create) - User with UID 'user_xyz' cannot create a profile document at /users/user_abc.
-     * @deny (get) - User with UID 'user_xyz' cannot read the profile document at /users/user_abc.
-     * @principle Enforces document ownership for writes.  Validates relational integrity on create and enforces immutability on update.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && resource.data.id == request.resource.data.id && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.id == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Secure devices subcollection. Users can only manage devices they own.
+     * @description A subcollection containing the devices owned by the user.
      * @path /users/{userId}/devices/{deviceId}
-     * @allow (create) - User with UID 'user_abc' can create a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
-     * @allow (get) - User with UID 'user_abc' can read a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
-     * @allow (update) - User with UID 'user_abc' can update a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
-     * @allow (delete) - User with UID 'user_abc' can delete a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
-     * @deny (create) - User with UID 'user_xyz' cannot create a device document at /users/user_abc/devices/device_123.
-     * @deny (get) - User with UID 'user_xyz' cannot read the device document at /users/user_abc/devices/device_123.
-     * @principle Enforces document ownership for writes. Validates relational integrity on create and enforces immutability on update.
      */
     match /users/{userId}/devices/{deviceId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) && resource.data.userId == userId;
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && request.resource.data.userId == userId && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow create: if isOwner(userId) && isCreatingOwnedBy(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId) && resource.data.userId == userId;
     }
 
     /**
-     * @description Secure alerts subcollection. Users can only manage alerts for devices they own.
+     * @description A subcollection containing alerts for a specific device.
      * @path /users/{userId}/devices/{deviceId}/alerts/{alertId}
-     * @allow (create) - User with UID 'user_abc' can create an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
-     * @allow (get) - User with UID 'user_abc' can read an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
-     * @allow (update) - User with UID 'user_abc' can update an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
-     * @allow (delete) - User with UID 'user_abc' can delete an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
-     * @deny (create) - User with UID 'user_xyz' cannot create an alert document at /users/user_abc/devices/device_123/alerts/alert_456.
-     * @deny (get) - User with UID 'user_xyz' cannot read the alert document at /users/user_abc/devices/device_123/alerts/alert_456.
-     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/devices/{deviceId}/alerts/{alertId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) && resource.data.userId == userId;
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && request.resource.data.userId == userId && resource != null;
-      allow delete: if isOwner(userId) && resource != null;
+      allow create: if isOwner(userId) && isCreatingOwnedBy(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId) && resource.data.userId == userId;
     }
   }
 }
