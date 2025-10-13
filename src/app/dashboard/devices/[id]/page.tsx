@@ -34,19 +34,19 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
   const { user, isUserLoading } = useUser();
 
   const deviceRef = useMemo(() => {
-    if (firestore && user?.uid) {
-      return doc(firestore, 'users', user.uid, 'devices', params.id);
+    if (isUserLoading || !firestore || !user?.uid) {
+      return null;
     }
-    return null;
-  }, [firestore, user, params.id]);
+    return doc(firestore, 'users', user.uid, 'devices', params.id);
+  }, [firestore, user?.uid, params.id, isUserLoading]);
   const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
 
   const alertsRef = useMemo(() => {
-    if (firestore && user?.uid) {
-      return collection(firestore, 'users', user.uid, 'devices', params.id, 'alerts');
+    if (isUserLoading || !firestore || !user?.uid) {
+      return null;
     }
-    return null;
-  }, [firestore, user, params.id]);
+    return collection(firestore, 'users', user.uid, 'devices', params.id, 'alerts');
+  }, [firestore, user?.uid, params.id, isUserLoading]);
   const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
 
   if (isDeviceLoading || isAlertsLoading || isUserLoading) {
@@ -56,7 +56,7 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
   if (!device) {
     // This could be because it's still loading or it doesn't exist.
     // If loading is finished and there's no device, then show not found.
-    if (!isDeviceLoading) {
+    if (!isDeviceLoading && !isUserLoading) {
       return notFound();
     }
     return <DeviceDetailLoading />;
