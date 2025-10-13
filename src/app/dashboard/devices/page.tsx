@@ -63,12 +63,8 @@ export default function DevicesPage() {
   const { user, isUserLoading } = useUser();
 
   const devicesRef = useMemo(() => {
-    // CRITICAL: Wait for user loading to finish before checking for user.
-    if (isUserLoading) {
-      return null;
-    }
-    // After loading, if there's no user or firestore, we can't proceed.
-    if (!firestore || !user?.uid) {
+    // CRITICAL: Wait for user loading to finish and user to be available.
+    if (isUserLoading || !firestore || !user?.uid) {
       return null;
     }
     return collection(firestore, 'users', user.uid, 'devices');

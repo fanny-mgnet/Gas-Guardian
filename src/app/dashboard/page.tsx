@@ -75,11 +75,8 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
 
   const devicesRef = useMemo(() => {
-    // CRITICAL: Wait for user loading to finish before checking for user.
-    if (isUserLoading) {
-      return null;
-    }
-    if (!firestore || !user?.uid) {
+    // CRITICAL: Wait for user loading to finish and user to be available.
+    if (isUserLoading || !firestore || !user?.uid) {
       return null;
     }
     return collection(firestore, 'users', user.uid, 'devices');
@@ -87,11 +84,8 @@ export default function Dashboard() {
   const { data: devices, isLoading: devicesLoading } = useCollection<Device>(devicesRef);
 
   const alertsQuery = useMemo(() => {
-    // CRITICAL: Wait for user loading to finish before checking for user.
-    if (isUserLoading) {
-      return null;
-    }
-    if (!firestore || !user?.uid) {
+    // CRITICAL: Wait for user loading to finish and user to be available.
+    if (isUserLoading || !firestore || !user?.uid) {
       return null;
     }
     return query(
