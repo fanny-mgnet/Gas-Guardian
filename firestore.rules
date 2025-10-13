@@ -1,95 +1,96 @@
 /**
- * @fileoverview Firestore Security Rules for the SmartGas Guardian system.
+ * @fileoverview Firestore Security Rules for SmartGas Guardian.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. Each user can only access
- * their own user profile and the devices and alerts associated with their account.
- * All data is nested under the /users/{userId} path to ensure clear ownership.
+ * This ruleset enforces a strict user-ownership model for all data. Users can only
+ * access their own profile information, devices, and alerts. There are no administrative
+ * roles or shared access scenarios in this initial version.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information.
- * - /users/{userId}/devices/{deviceId}: Stores device information for a specific user.
- * - /users/{userId}/devices/{deviceId}/alerts/{alertId}: Stores alert information for a specific device.
+ * Data is organized hierarchically under `/users/{userId}`, with devices stored in a
+ * subcollection `/users/{userId}/devices/{deviceId}` and alerts in
+ * `/users/{userId}/devices/{deviceId}/alerts/{alertId}`. This structure facilitates
+ * owner-only access control.
  *
  * Key Security Decisions:
- * - Users can only create, read, update, and delete their own user profile.
- * - Users can only create, read, update, and delete devices associated with their account.
- * - Users can only create, read, update, and delete alerts associated with their devices.
- * - Listing of top-level collections is disallowed to prevent unauthorized data discovery.
- * - Data validation is minimal in this prototyping phase, focusing on authorization and relational integrity.
+ * - Users can only create their own user document using their UID as the document ID.
+ * - Users cannot list all users.
+ * - All device and alert data is strictly owned by the user who created it.
+ * - No public data access is allowed.
  *
  * Denormalization for Authorization:
- * - Device and Alert documents contain a `userId` field, which is used to verify ownership.
- *   This avoids the need for complex queries to determine ownership.
+ * The `userId` field is denormalized into both the `/devices` and `/alerts` documents to
+ * simplify security rules and avoid costly `get()` calls. This allows direct ownership
+ * checks at the device and alert level.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows users to manage their own profile.
+     * @description Secure user profiles. Users can only read and write their own profile.
      * @path /users/{userId}
-     * @allow (create) - User with UID 'user123' can create a profile with id 'user123'.
-     * @allow (get) - User with UID 'user123' can read their profile.
-     * @allow (update) - User with UID 'user123' can update their profile.
-     * @allow (delete) - User with UID 'user123' can delete their profile.
-     * @deny (create) - User with UID 'user456' cannot create a profile with id 'user123'.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - User with UID 'user_abc' can create their own profile document at /users/user_abc.
+     * @allow (get) - User with UID 'user_abc' can read their own profile document at /users/user_abc.
+     * @allow (update) - User with UID 'user_abc' can update their own profile document at /users/user_abc.
+     * @allow (delete) - User with UID 'user_abc' can delete their own profile document at /users/user_abc.
+     * @deny (create) - User with UID 'user_xyz' cannot create a profile document at /users/user_abc.
+     * @deny (get) - User with UID 'user_xyz' cannot read the profile document at /users/user_abc.
+     * @principle Enforces document ownership for writes.  Validates relational integrity on create and enforces immutability on update.
      */
     match /users/{userId} {
-      allow get: if isSignedIn() && isOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+      allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId) && resource.data.id == request.resource.data.id && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Allows users to manage their own devices.
+     * @description Secure devices subcollection. Users can only manage devices they own.
      * @path /users/{userId}/devices/{deviceId}
-     * @allow (create) - User with UID 'user123' can create a device under their profile.
-     * @allow (get) - User with UID 'user123' can read their device.
-     * @allow (update) - User with UID 'user123' can update their device.
-     * @allow (delete) - User with UID 'user123' can delete their device.
-     * @deny (create) - User with UID 'user456' cannot create a device under user 'user123'.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - User with UID 'user_abc' can create a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
+     * @allow (get) - User with UID 'user_abc' can read a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
+     * @allow (update) - User with UID 'user_abc' can update a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
+     * @allow (delete) - User with UID 'user_abc' can delete a device document at /users/user_abc/devices/device_123 if device.userId == user_abc.
+     * @deny (create) - User with UID 'user_xyz' cannot create a device document at /users/user_abc/devices/device_123.
+     * @deny (get) - User with UID 'user_xyz' cannot read the device document at /users/user_abc/devices/device_123.
+     * @principle Enforces document ownership for writes. Validates relational integrity on create and enforces immutability on update.
      */
     match /users/{userId}/devices/{deviceId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && resource.data.userId == userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isOwner(userId) && request.resource.data.userId == userId && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Allows users to manage alerts for their devices.
+     * @description Secure alerts subcollection. Users can only manage alerts for devices they own.
      * @path /users/{userId}/devices/{deviceId}/alerts/{alertId}
-     * @allow (create) - User with UID 'user123' can create an alert for their device.
-     * @allow (get) - User with UID 'user123' can read alerts for their device.
-     * @allow (update) - User with UID 'user123' can update alerts for their device.
-     * @allow (delete) - User with UID 'user123' can delete alerts for their device.
-     * @deny (create) - User with UID 'user456' cannot create an alert under user 'user123's device.
+     * @allow (create) - User with UID 'user_abc' can create an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
+     * @allow (get) - User with UID 'user_abc' can read an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
+     * @allow (update) - User with UID 'user_abc' can update an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
+     * @allow (delete) - User with UID 'user_abc' can delete an alert document at /users/user_abc/devices/device_123/alerts/alert_456 if alert.userId == user_abc.
+     * @deny (create) - User with UID 'user_xyz' cannot create an alert document at /users/user_abc/devices/device_123/alerts/alert_456.
+     * @deny (get) - User with UID 'user_xyz' cannot read the alert document at /users/user_abc/devices/device_123/alerts/alert_456.
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/devices/{deviceId}/alerts/{alertId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && resource.data.userId == userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isOwner(userId) && request.resource.data.userId == userId && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
   }
 }
