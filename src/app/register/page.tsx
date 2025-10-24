@@ -10,12 +10,10 @@ import { Input } from "@/components/ui/input";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useUser, useAuth } from '@/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useUser } from '@/supabase/auth';
+import { supabase } from '@/supabase/client';
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { doc, setDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
 
 function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { icon: React.ElementType, id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
     return (
@@ -28,9 +26,7 @@ function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { ic
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -50,43 +46,40 @@ export default function RegisterPage() {
         variant: 'destructive',
         title: 'Registration Failed',
         description: 'Passwords do not match.',
-      })
+      });
       return;
     }
-    if (!auth || !firestore) {
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone_number: phone,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      // Supabase authentication handles user creation.
+      // Additional profile data can be stored directly in the user's metadata
+      // or in a separate 'profiles' table if explicitly created and managed.
+      // For this migration, we'll rely on the data passed in the signUp options.
+
+      toast({
+        title: 'Registration Successful',
+        description: 'Please check your email to verify your account.',
+      });
+      router.push('/login'); // Redirect to login after successful registration
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Registration Failed',
-        description: 'Authentication service not available.',
-      });
-      return;
-    }
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-
-      await updateProfile(firebaseUser, {
-        displayName: fullName,
-        // photoURL: ... if you have one
-      });
-      
-      // Now create the user document in Firestore
-      const userRef = doc(firestore, 'users', firebaseUser.uid);
-      await setDoc(userRef, {
-        id: firebaseUser.uid,
-        email: firebaseUser.email,
-        createdAt: new Date().toISOString(),
-        displayName: fullName,
-        phoneNumber: phone,
-      });
-
-      // Let the useEffect handle the redirect
-    } catch (error: any) {
-       toast({
-        variant: 'destructive',
-        title: 'Registration Failed',
         description: error.message,
-      })
+      });
     }
   };
 

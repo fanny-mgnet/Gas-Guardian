@@ -9,11 +9,12 @@ import type { Alert, Device } from '@/lib/types';
 import { AddDeviceDialog } from '@/components/add-device-dialog';
 import Link from 'next/link';
 import { Header } from '@/components/header';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection } from '@/supabase/use-collection';
+import { useUser } from '@/supabase/auth';
+import { supabase } from '@/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useMemo } from 'react';
-import { collection, collectionGroup, query, where, orderBy, limit } from 'firebase/firestore';
 
 function DashboardLoading() {
   return (
@@ -71,27 +72,28 @@ function DashboardLoading() {
 }
 
 export default function Dashboard() {
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
 
   const devicesRef = useMemo(() => {
-    if (isUserLoading || !firestore || !user?.uid) {
+    if (isUserLoading || !user?.id) {
       return null;
     }
-    return collection(firestore, 'users', user.uid, 'devices');
-  }, [firestore, user?.uid, isUserLoading]);
+    return {
+      from: 'devices',
+      params: { userId: user.id },
+    };
+  }, [user?.id, isUserLoading]);
   const { data: devices, isLoading: devicesLoading, error: devicesError } = useCollection<Device>(devicesRef);
 
   const alertsRef = useMemo(() => {
-    if (isUserLoading || !firestore || !user?.uid) {
+    if (isUserLoading || !user?.id) {
       return null;
     }
-    // This query gets all alerts for the current user across all their devices
-    return query(
-      collectionGroup(firestore, 'alerts'), 
-      where('userId', '==', user.uid)
-    );
-  }, [firestore, user?.uid, isUserLoading]);
+    return {
+      from: 'alerts',
+      params: { userId: user.id },
+    };
+  }, [user?.id, isUserLoading]);
 
   const { data: allAlerts, isLoading: alertsLoading, error: alertsError } = useCollection<Alert>(alertsRef);
   

@@ -35,6 +35,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -48,7 +49,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useUser } from '@/firebase';
+import { useUser } from '@/supabase/auth';
+import { supabase } from '@/supabase/client';
 
 function InfoCard({
     icon: Icon,
@@ -149,16 +151,110 @@ function SettingsItem({
 export default function ProfilePage() {
     const { toast } = useToast();
     const router = useRouter();
-    const { user, signOut: handleLogout } = useUser();
+    const { user, setUser } = useUser();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Logout Failed',
+                description: error.message,
+            });
+        }
+    };
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'You must be logged in to upload an image.',
+            });
+            return;
+        }
+
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        setUploading(true);
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: true,
+            });
+
+        if (uploadError) {
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: uploadError.message,
+            });
+            setUploading(false);
+            return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+        if (!publicUrlData?.publicUrl) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not get public URL for the uploaded image.',
+            });
+            setUploading(false);
+            return;
+        }
+
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ photo_url: publicUrlData.publicUrl })
+            .eq('id', user.id);
+
+        if (updateError) {
+            toast({
+                variant: 'destructive',
+                title: 'Profile Update Failed',
+                description: updateError.message,
+            });
+        } else {
+            // Manually update the user object in the context to reflect the new photoURL
+            if (user) {
+                setUser({
+                    ...user,
+                    user_metadata: {
+                        ...user.user_metadata,
+                        photoURL: publicUrlData.publicUrl,
+                    },
+                });
+            }
+            toast({
+                title: 'Profile Picture Updated',
+                description: 'Your profile picture has been successfully updated.',
+            });
+        }
+        setUploading(false);
+    };
+
     const userAvatarLg = PlaceHolderImages.find(p => p.id === 'user-avatar-lg');
     
     const profileData = {
-        name: user?.displayName || 'Sarah Johnson',
+        name: user?.user_metadata?.full_name || 'Sarah Johnson',
         email: user?.email || 'sarah.johnson@email.com',
-        phone: user?.phoneNumber || '+1 555-0123',
+        phone: user?.user_metadata?.phone_number || '+1 555-0123',
         emergencyContact: '+1 555-0456',
-        accountCreated: user?.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'January 15, 2024',
-        isEmailVerified: user?.emailVerified || true,
+        accountCreated: user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'January 15, 2024',
+        isEmailVerified: user?.email_confirmed_at ? true : false,
         subscription: 'Premium Plan',
         connectedDevices: 5,
         dataUsage: '2.3 GB',
@@ -199,17 +295,36 @@ export default function ProfilePage() {
             <div className="p-4">
                 <div className="relative w-28 h-28 mx-auto my-4">
                     <div className="relative w-full h-full group">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            accept="image/*"
+                            disabled={uploading}
+                        />
                         <Image
-                            src={user?.photoURL || userAvatarLg?.imageUrl || 'https://picsum.photos/seed/avatar-lg/96/96'}
+                            src={user?.user_metadata?.photoURL || userAvatarLg?.imageUrl || 'https://picsum.photos/seed/avatar-lg/96/96'}
                             width={112}
                             height={112}
                             alt="User avatar"
                             data-ai-hint="person picture"
                             className="rounded-full object-cover border-4 border-card"
                         />
-                        <div className="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Camera className="h-8 w-8 text-white" />
-                        </div>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            disabled={uploading}
+                        >
+                            {uploading ? (
+                                <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            ) : (
+                                <Camera className="h-8 w-8 text-white" />
+                            )}
+                        </button>
                     </div>
                 </div>
                 

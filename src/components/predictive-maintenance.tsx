@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getPrediction } from '@/lib/actions';
 import { Wand2, AlertTriangle, Loader2 } from 'lucide-react';
 import type { PredictFutureAlertsOutput } from '@/ai/flows/predictive-maintenance-alerts';
-import { useUser } from '@/firebase';
+import { useUser } from '@/supabase/auth';
 
 interface PredictiveMaintenanceProps {
   deviceId: string;

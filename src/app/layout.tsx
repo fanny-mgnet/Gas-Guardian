@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase';
+import { SupabaseProvider } from '@/supabase/provider';
 
 export const metadata: Metadata = {
   title: 'SmartGas Guardian',
   description: 'AI-Powered IoT Gas Detection System',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -26,9 +27,9 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased min-h-screen bg-background')}>
-        <FirebaseClientProvider>
+        <SupabaseProvider>
           {children}
-        </FirebaseClientProvider>
+        </SupabaseProvider>
         <Toaster />
       </body>
     </html>

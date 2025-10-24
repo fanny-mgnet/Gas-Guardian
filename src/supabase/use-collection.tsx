@@ -25,7 +25,7 @@ export interface UseCollectionResult<T> {
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
-  tableName: string | null | undefined,
+  queryConfig: { from: string; params?: Record<string, any> } | null | undefined,
   schema: string = 'public'
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
@@ -36,12 +36,14 @@ export function useCollection<T = any>(
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!tableName) {
+    if (!queryConfig?.from) {
       setIsLoading(true);
       setData(null);
       setError(null);
       return;
     }
+
+    const { from: tableName, params } = queryConfig;
 
     setIsLoading(true);
     setError(null);
@@ -52,9 +54,6 @@ export function useCollection<T = any>(
         'postgres_changes',
         { event: '*', schema, table: tableName },
         (payload) => {
-          // For simplicity, we'll refetch all data on any change.
-          // A more advanced implementation might handle specific events (INSERT, UPDATE, DELETE)
-          // to update the state more efficiently.
           fetchData();
         }
       )
@@ -62,9 +61,15 @@ export function useCollection<T = any>(
 
     const fetchData = async () => {
       try {
-        const { data: rows, error: fetchError } = await supabase
-          .from(tableName)
-          .select('*');
+        let query = supabase.from(tableName).select('*');
+
+        if (params) {
+          Object.keys(params).forEach((key) => {
+            query = query.eq(key, params[key]);
+          });
+        }
+
+        const { data: rows, error: fetchError } = await query;
 
         if (fetchError) {
           throw fetchError;
@@ -72,7 +77,7 @@ export function useCollection<T = any>(
 
         const results: ResultItemType[] = (rows as T[]).map((row: T) => ({
           ...row,
-          id: (row as any).id || Math.random().toString(36).substring(7), // Fallback for id if not present
+          id: (row as any).id || Math.random().toString(36).substring(7),
         }));
         setData(results);
         setError(null);
@@ -89,7 +94,7 @@ export function useCollection<T = any>(
     return () => {
       channel.unsubscribe();
     };
-  }, [tableName, schema]);
+  }, [queryConfig, schema]);
 
   return { data, isLoading, error };
 }

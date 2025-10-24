@@ -26,8 +26,7 @@ export interface UseDocResult<T> {
  * @returns {UseDocResult<T>} Object with data, isLoading, error.
  */
 export function useDoc<T = any>(
-  tableName: string | null | undefined,
-  id: string | null | undefined,
+  queryConfig: { from: string; params?: Record<string, any> } | null | undefined,
   schema: string = 'public'
 ): UseDocResult<T> {
   type StateDataType = WithId<T> | null;
@@ -37,12 +36,15 @@ export function useDoc<T = any>(
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!tableName || !id) {
+    if (!queryConfig?.from || !queryConfig?.params?.id) {
       setIsLoading(true);
       setData(null);
       setError(null);
       return;
     }
+
+    const { from: tableName, params } = queryConfig;
+    const id = params.id;
 
     setIsLoading(true);
     setError(null);
@@ -53,9 +55,6 @@ export function useDoc<T = any>(
         'postgres_changes',
         { event: '*', schema, table: tableName, filter: `id=eq.${id}` },
         (payload) => {
-          // For simplicity, we'll refetch all data on any change.
-          // A more advanced implementation might handle specific events (INSERT, UPDATE, DELETE)
-          // to update the state more efficiently.
           fetchData();
         }
       )
@@ -92,7 +91,7 @@ export function useDoc<T = any>(
     return () => {
       channel.unsubscribe();
     };
-  }, [tableName, id, schema]);
+  }, [queryConfig, schema]);
 
   return { data, isLoading, error };
 }

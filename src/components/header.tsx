@@ -27,12 +27,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/supabase/auth';
+import { supabase } from '@/supabase/client';
 
 export function Header() {
     const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
     const [open, setOpen] = React.useState(false);
-    const { user, signOut: handleLogout } = useUser();
+    const { user } = useUser();
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Logout Failed',
+                description: error.message,
+            });
+        }
+    };
 
 
     return (

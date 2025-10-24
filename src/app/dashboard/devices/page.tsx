@@ -18,8 +18,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection } from '@/supabase/use-collection';
+import { useUser } from '@/supabase/auth';
 import type { Device } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
@@ -59,18 +59,22 @@ function DevicesLoading() {
 
 
 export default function DevicesPage() {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
 
-  const devicesRef = useMemo(() => {
-    // CRITICAL: Wait for user loading to finish and user to be available.
-    if (isUserLoading || !firestore || !user?.uid) {
+  const collectionQuery = useMemo(() => {
+    if (isUserLoading || !user?.id) {
       return null;
     }
-    return collection(firestore, 'users', user.uid, 'devices');
-  }, [firestore, user?.uid, isUserLoading]);
+    return {
+      from: 'devices',
+      params: { user_id: user.id },
+    };
+  }, [user?.id, isUserLoading]);
 
-  const { data: devices, isLoading } = useCollection<Device>(devicesRef);
+  const { data: devices, isLoading } = useCollection<Device>(collectionQuery);
+
+  // No need for manual filtering as useCollection will handle it with params
+  const userDevices = devices;
 
   if (isLoading || isUserLoading) {
     return <DevicesLoading />;
@@ -95,7 +99,7 @@ export default function DevicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {devices && devices.map(device => (
+            {userDevices && userDevices.map(device => (
               <TableRow key={device.id}>
                 <TableCell className="font-medium">
                     <Link href={`/dashboard/devices/${device.id}`} className="hover:underline">

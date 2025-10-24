@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Mail, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
-import { useUser, useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useUser } from '@/supabase/auth';
+import { supabase } from '@/supabase/client';
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,8 +26,7 @@ function InputField({ icon: Icon, id, type, placeholder, value, onChange }: { ic
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
+  const { user, isLoading: isUserLoading } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
@@ -39,26 +38,49 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
 
- const handleLogin = async () => {
-   if (!auth) {
+  const handleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      // Let the useEffect handle the redirect
+    } catch (error: any) {
       toast({
-       variant: 'destructive',
-       title: 'Login Failed',
-       description: 'Authentication service is not available.',
-     });
-     return;
-   }
-   try {
-     await signInWithEmailAndPassword(auth, email, password);
-     // Let the useEffect handle the redirect
-   } catch (error: any) {
-     toast({
-       variant: 'destructive',
-       title: 'Login Failed',
-       description: error.message,
-     });
-   }
- };
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: error.message,
+      });
+    }
+  };
+
+  const handleForgotPassword = async (email: string) => {
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Password Reset Failed',
+        description: 'Please enter your email address to reset your password.',
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`, // You might need a dedicated reset password page
+      });
+      if (error) throw error;
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'Please check your email for instructions to reset your password.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Password Reset Failed',
+        description: error.message,
+      });
+    }
+  };
 
   if (isUserLoading || (!isUserLoading && user)) {
     return (
@@ -82,9 +104,9 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <InputField icon={Lock} id="password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <div className="flex items-center">
-                    <a href="#" className="ml-auto inline-block text-sm text-muted-foreground hover:text-primary">
+                    <Button variant="link" className="ml-auto px-0 text-sm text-muted-foreground hover:text-primary" onClick={() => handleForgotPassword(email)}>
                         Forgot your password?
-                    </a>
+                    </Button>
                 </div>
               </div>
           </CardContent>
@@ -102,3 +124,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

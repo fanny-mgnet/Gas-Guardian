@@ -1,8 +1,8 @@
 'use client';
 
-import { useDoc, useCollection, useUser } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useDoc } from '@/supabase/use-doc';
+import { useCollection } from '@/supabase/use-collection';
+import { useUser } from '@/supabase/auth';
 import { notFound } from 'next/navigation';
 import {
   Card,
@@ -30,24 +30,28 @@ import DeviceDetailLoading from './loading';
 import { useMemo } from 'react';
 
 export default function DeviceDetailPage({ params }: { params: { id: string } }) {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
 
-  const deviceRef = useMemo(() => {
-    if (isUserLoading || !firestore || !user?.uid) {
+  const deviceQueryConfig = useMemo(() => {
+    if (isUserLoading || !params.id) {
       return null;
     }
-    return doc(firestore, 'users', user.uid, 'devices', params.id);
-  }, [firestore, user?.uid, params.id, isUserLoading]);
-  const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceRef);
+    return { from: 'devices', params: { id: params.id } };
+  }, [isUserLoading, params.id]);
 
-  const alertsRef = useMemo(() => {
-    if (isUserLoading || !firestore || !user?.uid) {
+  const { data: device, isLoading: isDeviceLoading } = useDoc<Device>(deviceQueryConfig);
+
+  const alertsQueryConfig = useMemo(() => {
+    if (isUserLoading || !device?.id) {
       return null;
     }
-    return collection(firestore, 'users', user.uid, 'devices', params.id, 'alerts');
-  }, [firestore, user?.uid, params.id, isUserLoading]);
-  const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsRef);
+    return { from: 'alerts', params: { device_id: device.id } };
+  }, [isUserLoading, device?.id]);
+
+  const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsQueryConfig);
+
+  // No need for manual filtering as useCollection will handle it with params
+  const deviceAlerts = alerts;
 
   if (isDeviceLoading || isAlertsLoading || isUserLoading) {
     return <DeviceDetailLoading />;
@@ -73,7 +77,7 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
     }
   };
 
-  const sortedAlerts = alerts ? [...alerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
+  const sortedAlerts = deviceAlerts ? [...deviceAlerts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
   const latestAlert = sortedAlerts[0];
 
   return (
