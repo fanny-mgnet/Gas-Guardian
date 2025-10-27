@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Link from "next/link";
 import { useUser } from '@/supabase/auth';
 import { supabase } from '@/supabase/client';
 import { useState, useEffect } from 'react';
@@ -73,13 +73,14 @@ export default function RegisterPage() {
         .from('profiles')
         .insert({ 
             id: signUpData.user.id, 
-            full_name: fullName,
-            updated_at: new Date().toISOString(),
+            full_name: fullName
         });
 
       if (profileError) {
         // Handle profile creation error, maybe delete the user or notify them
         console.error("Error creating profile:", profileError);
+        // Attempt to delete the user to avoid orphaned auth users
+        await supabase.auth.admin.deleteUser(signUpData.user.id);
         throw new Error(`Failed to create user profile: ${profileError.message}`);
       }
 
