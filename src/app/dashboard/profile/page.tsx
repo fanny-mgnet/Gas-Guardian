@@ -31,6 +31,7 @@ import {
     Scale,
     Globe,
     LogOut,
+    Fingerprint,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -332,6 +333,7 @@ export default function ProfilePage() {
                     <InfoCard icon={User} label="Full Name" value={profileData.name} action={editButton} />
                     <InfoCard icon={Mail} label="Email Address" value={profileData.email} action={editButton} isVerified={profileData.isEmailVerified} />
                     <InfoCard icon={Phone} label="Phone Number" value={profileData.phone} action={editButton} />
+                    {user?.id && <InfoCard icon={Fingerprint} label="User ID" value={user.id} />}
                     <InfoCard icon={Calendar} label="Account Created" value={profileData.accountCreated} />
                 </div>
 
@@ -440,3 +442,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    
