@@ -77,7 +77,7 @@ export function useCollection<T = any>(
 
         const results: ResultItemType[] = (rows as T[]).map((row: T) => ({
           ...row,
-          id: (row as any).id || Math.random().toString(36).substring(7),
+          id: (row as any).id,
         }));
         setData(results);
         setError(null);

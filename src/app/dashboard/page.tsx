@@ -80,7 +80,7 @@ export default function Dashboard() {
     }
     return {
       from: 'devices',
-      params: { userId: user.id },
+      params: { user_id: user.id },
     };
   }, [user?.id, isUserLoading]);
   const { data: devices, isLoading: devicesLoading, error: devicesError } = useCollection<Device>(devicesRef);
@@ -91,7 +91,7 @@ export default function Dashboard() {
     }
     return {
       from: 'alerts',
-      params: { userId: user.id },
+      params: { user_id: user.id },
     };
   }, [user?.id, isUserLoading]);
 
@@ -120,10 +120,10 @@ export default function Dashboard() {
   let gasLevel = 0;
   if (latestAlert && latestAlert.sensorData) {
     try {
-      const sensorData = JSON.parse(latestAlert.sensorData);
-      gasLevel = sensorData.gas_value;
+      const sensorData = latestAlert.sensorData;
+      gasLevel = sensorData.gas_value ?? 0;
     } catch (e) {
-      console.error("Dashboard: Error parsing sensorData JSON:", e);
+      console.error("Dashboard: Error accessing sensorData:", e);
     }
   }
   const lastUpdated = latestAlert?.createdAt;

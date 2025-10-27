@@ -24,17 +24,25 @@ interface GasLevelChartProps {
 
 const chartConfig = {
   gas_value: {
-    label: 'Gas Level',
-    color: 'hsl(var(--accent))',
+    label: 'Gas Level (Raw)',
+    color: 'hsl(var(--chart-1))',
+  },
+  gas_percentage: {
+    label: 'Gas Level (%)',
+    color: 'hsl(var(--chart-2))',
   },
 } satisfies ChartConfig;
 
 
 export function GasLevelChart({ alerts }: GasLevelChartProps) {
-    const chartData = alerts.map(alert => ({
-        date: format(new Date(alert.createdAt), 'MMM d, HH:mm'),
-        gas_value: JSON.parse(alert.sensorData).gas_value,
-    })).reverse(); // reverse to show oldest first
+    const chartData = alerts.map(alert => {
+        const sensorData = JSON.parse(alert.sensorData);
+        return {
+            date: format(new Date(alert.createdAt), 'MMM d, HH:mm'),
+            gas_value: sensorData.gas_value,
+            gas_percentage: sensorData.gas_percentage,
+        };
+    }).reverse(); // reverse to show oldest first
 
   return (
     <Card>
@@ -54,8 +62,9 @@ export function GasLevelChart({ alerts }: GasLevelChartProps) {
               tickFormatter={(value) => value.slice(0, 6)}
             />
             <YAxis />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />
             <Bar dataKey="gas_value" fill="var(--color-gas_value)" radius={4} />
+            <Bar dataKey="gas_percentage" fill="var(--color-gas_percentage)" radius={4} />
           </BarChart>
         </ChartContainer>
       </CardContent>

@@ -14,7 +14,7 @@ import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/supabase/auth';
 import { supabase } from '@/supabase/client';
-import { useState, FormEvent } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -25,6 +25,7 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
     const [wifiSsid, setWifiSsid] = useState('');
     const [wifiPassword, setWifiPassword] = useState('');
     const [notificationNumber, setNotificationNumber] = useState('');
+    const [claimedDeviceId, setClaimedDeviceId] = useState('');
 
     const handleAddDevice = async (e: FormEvent) => {
         e.preventDefault();
@@ -75,25 +76,9 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
             });
 
             // Step 2: Save device details to Supabase after successful ESP32 configuration
-            const newDevice = {
-                mac_address: `DE:AD:BE:EF:${Math.floor(Math.random() * 256).toString(16).padStart(2, '0')}:${Math.floor(Math.random() * 256).toString(16).padStart(2, '0')}`,
-                device_name: "SmartGas Hub", // Default name, user can change later
-                wifi_ssid: wifiSsid,
-                notification_number: notificationNumber,
-                email: user.email || 'anonymous@example.com',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                is_active: true, // Mark as active since it should be connecting
-                user_id: user.id,
-            };
-
-            const { error: supabaseError } = await supabase.from('devices').insert([newDevice]);
-            if (supabaseError) throw supabaseError;
-
-            toast({
-                title: "Device Added to Account",
-                description: "New device has been registered to your account in Supabase.",
-            });
+            // This part is now handled by the ESP32 itself registering the device.
+            // The user will claim it later.
+            
             setIsOpen(false);
             // Clear form fields
             setWifiSsid('');
@@ -109,9 +94,60 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const handleClaimDevice = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: "Error",
+                description: "You must be logged in to claim a device.",
+            });
+            return;
+        }
+
+        if (!claimedDeviceId) {
+            toast({
+                variant: 'destructive',
+                title: "Missing Information",
+                description: "Please enter a Device ID.",
+            });
+            return;
+        }
+
+        try {
+            // Call a Supabase Edge Function to claim the device
+            const { data, error } = await supabase.functions.invoke('claim-device', {
+                body: { device_id: claimedDeviceId, user_id: user.id },
+            });
+
+            if (error) throw error;
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            toast({
+                title: "Device Claimed",
+                description: "The device has been successfully linked to your account.",
+            });
+            setIsOpen(false);
+            setClaimedDeviceId(''); // Clear the input field
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Device Claim Failed',
+                description: error.message,
+            });
+        }
+    };
+
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger asChild onClick={(e) => {
+                e.preventDefault(); // Prevent the dialog from opening
+                window.open('http://192.168.4.1/', '_blank'); // Open in a new tab
+            }}>
                 {children}
             </DialogTrigger>
             <DialogContent className="sm:max-w-md rounded-lg">
@@ -124,44 +160,43 @@ export function AddDeviceDialog({ children }: { children: React.ReactNode }) {
                         Follow the setup wizard to pair a new ESP32 device
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleAddDevice} className="p-6 pt-4 space-y-4">
-                    <div>
-                        <Label htmlFor="wifi-ssid">Wi-Fi Name (SSID)</Label>
-                        <Input
-                            id="wifi-ssid"
-                            value={wifiSsid}
-                            onChange={(e) => setWifiSsid(e.target.value)}
-                            placeholder="Your Wi-Fi Network Name"
-                            required
-                        />
+
+                <div className="p-6 pt-4 space-y-6">
+                    {/* Section for configuring a new device */}
+                    <div className="border-b pb-4">
+                        <h3 className="text-lg font-semibold mb-2">Configure New Device</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Connect to your ESP32's Wi-Fi hotspot (e.g., "SmartGas-XXXX") and then click "Configure Device" to send Wi-Fi credentials.
+                        </p>
+                        <Button type="button" className="w-full" onClick={() => window.open('http://192.168.4.1/', '_blank')}>
+                            Configure Device (Opens new tab)
+                        </Button>
                     </div>
+
+                    {/* Section for claiming an existing device */}
                     <div>
-                        <Label htmlFor="wifi-password">Wi-Fi Password</Label>
-                        <Input
-                            id="wifi-password"
-                            type="password"
-                            value={wifiPassword}
-                            onChange={(e) => setWifiPassword(e.target.value)}
-                            placeholder="Your Wi-Fi Password"
-                            required
-                        />
+                        <h3 className="text-lg font-semibold mb-2">Claim Existing Device</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Enter the Device ID (UUID) of an already configured ESP32 to link it to your account.
+                        </p>
+                        <form onSubmit={handleClaimDevice} className="space-y-4">
+                            <div>
+                                <Label htmlFor="device-id">Device ID (UUID)</Label>
+                                <Input
+                                    id="device-id"
+                                    value={claimedDeviceId}
+                                    onChange={(e) => setClaimedDeviceId(e.target.value)}
+                                    placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
+                                    required
+                                />
+                            </div>
+                            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4">
+                                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                                <Button type="submit" className="w-full sm:w-auto">Claim Device</Button>
+                            </DialogFooter>
+                        </form>
                     </div>
-                    <div>
-                        <Label htmlFor="notification-number">Notification Mobile Number</Label>
-                        <Input
-                            id="notification-number"
-                            type="tel"
-                            value={notificationNumber}
-                            onChange={(e) => setNotificationNumber(e.target.value)}
-                            placeholder="e.g., +15551234567"
-                            required
-                        />
-                    </div>
-                    <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4">
-                        <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <Button type="submit" className="w-full sm:w-auto">Add Device</Button>
-                    </DialogFooter>
-                </form>
+                </div>
             </DialogContent>
         </Dialog>
     );

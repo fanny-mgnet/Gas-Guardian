@@ -73,7 +73,7 @@ export function useDoc<T = any>(
         }
 
         if (row) {
-          setData({ ...(row as T), id: (row as any).id || id });
+          setData({ ...(row as T), id: (row as any).id });
         } else {
           setData(null);
         }

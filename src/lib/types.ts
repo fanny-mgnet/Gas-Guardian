@@ -13,9 +13,26 @@ export type Device = {
 export type Alert = {
   id: string; // Document ID
   deviceId: string;
-  alertType: 'gas_emergency' | 'gas_warning' | 'gas_normal';
+  alertType: 'gas_emergency' | 'gas_warning' | 'gas_normal' | 'system';
   message: string;
-  sensorData: string; // JSON string
+  sensorData: {
+    gas_value?: number;
+    gas_percentage?: number;
+    threshold?: number;
+    warning_level?: number;
+    status?: string;
+    device_id?: string;
+    test?: string;
+    gas?: number;
+  };
   createdAt: string; // ISO date string
   userId: string; // Denormalized for collection group queries
+};
+
+export type Profile = {
+  id: string;
+  updated_at: string;
+  full_name: string;
+  avatar_url: string;
+  website: string;
 };

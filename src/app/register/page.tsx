@@ -51,7 +51,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -62,12 +62,26 @@ export default function RegisterPage() {
         },
       });
 
-      if (error) throw error;
+      if (signUpError) throw signUpError;
+      
+      if (!signUpData.user) {
+        throw new Error("User not created after sign up.");
+      }
 
-      // Supabase authentication handles user creation.
-      // Additional profile data can be stored directly in the user's metadata
-      // or in a separate 'profiles' table if explicitly created and managed.
-      // For this migration, we'll rely on the data passed in the signUp options.
+      // After successful sign-up, create a profile entry
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({ 
+            id: signUpData.user.id, 
+            full_name: fullName,
+            updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        // Handle profile creation error, maybe delete the user or notify them
+        console.error("Error creating profile:", profileError);
+        throw new Error(`Failed to create user profile: ${profileError.message}`);
+      }
 
       toast({
         title: 'Registration Successful',

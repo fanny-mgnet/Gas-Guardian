@@ -66,12 +66,14 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
     return <DeviceDetailLoading />;
   }
 
-  const getAlertVariant = (type: string) => {
+  const getAlertVariant = (type: Alert['alertType']) => {
     switch (type) {
       case 'gas_emergency':
         return 'destructive';
       case 'gas_warning':
         return 'default';
+      case 'system':
+        return 'outline';
       default:
         return 'secondary';
     }
@@ -126,7 +128,8 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
                         <TableRow>
                             <TableHead>Status</TableHead>
                             <TableHead>Message</TableHead>
-                            <TableHead>Gas Level</TableHead>
+                            <TableHead>Gas Level (Raw)</TableHead>
+                            <TableHead>Gas Level (%)</TableHead>
                             <TableHead className="text-right">Time</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -139,7 +142,8 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">{alert.message}</TableCell>
-                        <TableCell>{JSON.parse(alert.sensorData).gas_value}</TableCell>
+                        <TableCell>{alert.sensorData.gas_value}</TableCell>
+                        <TableCell>{alert.sensorData.gas_percentage}</TableCell>
                         <TableCell className="text-right">
                           {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
                         </TableCell>
