@@ -39,6 +39,12 @@ next-env.d.ts
 
 .genkit/*
 .env*
+.idx/
+
+# supabase
+supabase/.temp/
+supabase/config.toml
+supabase/functions/*/node_modules
 
 # firebase
 firebase-debug.log
