@@ -68,21 +68,6 @@ export default function RegisterPage() {
         throw new Error("User not created after sign up.");
       }
 
-      // After successful sign-up, create a profile entry
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({ 
-            id: signUpData.user.id, 
-            full_name: fullName
-        });
-
-      if (profileError) {
-        // Handle profile creation error, maybe delete the user or notify them
-        console.error("Error creating profile:", profileError);
-        // Attempt to delete the user to avoid orphaned auth users
-        await supabase.auth.admin.deleteUser(signUpData.user.id);
-        throw new Error(`Failed to create user profile: ${profileError.message}`);
-      }
 
       toast({
         title: 'Registration Successful',

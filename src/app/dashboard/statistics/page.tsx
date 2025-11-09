@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft,
   Share2,
@@ -37,72 +37,39 @@ import Link from 'next/link';
 import { Calendar } from '@/components/ui/calendar';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
+import { getStatisticsData } from '@/lib/actions';
+import { FilterType, StatisticsData, SummaryStats, TrendDataPoint, DeviceComparisonDataPoint, DailyGasData } from '@/lib/types';
+// import { useDoc } from '@/supabase/use-doc'; // Temporarily removed to fix compilation
 
-const trendData = {
-    today: [
-      { time: '12am', value: 28 }, { time: '3am', value: 30 }, { time: '6am', value: 35 }, { time: '9am', value: 42 },
-      { time: '12pm', value: 55 }, { time: '3pm', value: 48 }, { time: '6pm', value: 45 }, { time: '9pm', value: 50 },
-    ],
-    week: [
-      { time: 'Mon', value: 35 }, { time: 'Tue', value: 42 }, { time: 'Wed', value: 38 }, { time: 'Thu', value: 45 },
-      { time: 'Fri', value: 51 }, { time: 'Sat', value: 48 }, { time: 'Sun', value: 55 },
-    ],
-    month: [
-      { time: 'W1', value: 45 }, { time: 'W2', value: 50 }, { time: 'W3', value: 58 }, { time: 'W4', value: 52 },
-    ],
-    year: [
-      { time: 'Jan', value: 30 }, { time: 'Feb', value: 32 }, { time: 'Mar', value: 28 }, { time: 'Apr', value: 35 },
-      { time: 'May', value: 40 }, { time: 'Jun', value: 45 }, { time: 'Jul', value: 42 }, { time: 'Aug', value: 50 },
-      { time: 'Sep', value: 55 }, { time: 'Oct', value: 62 }, { time: 'Nov', value: 58 }, { time: 'Dec', value: 60 },
-    ],
+// Define initial empty state for StatisticsData
+const initialStatsData: StatisticsData = {
+    trendData: [],
+    summaryStats: {
+        average: { value: '0.0', unit: 'ppm', change: '0%', type: 'neutral' },
+        peak: { value: '0.0', unit: 'ppm', change: '0%', type: 'neutral' },
+        safe: { value: '0.0', unit: 'hrs', change: '0%', type: 'neutral' },
+        alerts: { value: '0', unit: 'times', change: '0%', type: 'neutral' },
+    },
+    deviceComparisonData: [],
+    dailyGasData: {},
 };
 
-const statsData = {
-    today: {
-        average: { value: '42.1', unit: 'ppm', change: '+5.1%', type: 'increase' },
-        peak: { value: '55.0', unit: 'ppm', change: '+3.2%', type: 'increase' },
-        safe: { value: '6.2', unit: 'hrs', change: '-10.0%', type: 'decrease' },
-        alerts: { value: '1', unit: 'time', change: '0%', type: 'decrease' },
-    },
-    week: {
-        average: { value: '45.2', unit: 'ppm', change: '+8.7%', type: 'increase' },
-        peak: { value: '68.3', unit: 'ppm', change: '+15.2%', type: 'increase' },
-        safe: { value: '18.5', unit: 'hrs', change: '+18.5%', type: 'decrease' },
-        alerts: { value: '3', unit: 'times', change: '-15.8%', type: 'decrease' },
-    },
-    month: {
-        average: { value: '51.5', unit: 'ppm', change: '+12.3%', type: 'increase' },
-        peak: { value: '75.1', unit: 'ppm', change: '+20.1%', type: 'increase' },
-        safe: { value: '65.0', unit: 'hrs', change: '+12.5%', type: 'decrease' },
-        alerts: { value: '12', unit: 'times', change: '+5.0%', type: 'increase' },
-    },
-    year: {
-        average: { value: '48.9', unit: 'ppm', change: '+2.5%', type: 'increase' },
-        peak: { value: '80.5', unit: 'ppm', change: '+8.0%', type: 'increase' },
-        safe: { value: '2500', unit: 'hrs', change: '+5.0%', type: 'decrease' },
-        alerts: { value: '150', unit: 'times', change: '+2.1%', type: 'increase' },
-    },
-};
-
-type FilterType = 'today' | 'week' | 'month' | 'year';
-
-const deviceComparisonData = [
-    { name: 'Kitchen', value: 42 },
-    { name: 'Living Room', value: 38 },
-    { name: 'Basement', value: 68 },
-    { name: 'Garage', value: 52 },
+const CHART_COLORS = [
+    "hsl(var(--chart-1))",
+    "hsl(var(--chart-2))",
+    "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))",
+    "hsl(var(--chart-5))",
+    "hsl(var(--chart-6))",
 ];
-  
-const deviceComparisonConfig = {
+
+// Base config for ChartContainer
+const baseDeviceComparisonConfig = {
     value: {
         label: "Gas Level",
     },
-    'Kitchen': { label: "Kitchen", color: "hsl(var(--chart-1))" },
-    'Living Room': { label: "Living Room", color: "hsl(var(--chart-2))" },
-    'Basement': { label: "Basement", color: "hsl(var(--chart-3))" },
-    'Garage': { label: "Garage", color: "hsl(var(--chart-4))" },
 }
-
+  
 function SmallStatCard({
   icon: Icon,
   title,
@@ -168,33 +135,86 @@ function MonthlySummaryCard({ icon: Icon, iconColor, title, value, subtitle, car
 }
 
 export default function StatisticsPage() {
-    const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9, 1)); // October 2025
+    // NOTE: Using a placeholder for userId to isolate the server action error.
+    const userId = 'placeholder-user-id';
+
+    const [currentMonth, setCurrentMonth] = useState(new Date());
     const [activeFilter, setActiveFilter] = useState<FilterType>('week');
-    
-    const [currentTrend, setCurrentTrend] = useState(trendData.week);
-    const [currentStats, setCurrentStats] = useState(statsData.week);
+    const [statsData, setStatsData] = useState<StatisticsData>(initialStatsData);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = useCallback(async (filter: FilterType) => {
+        if (!userId) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await getStatisticsData(filter, userId);
+            setStatsData(data);
+        } catch (e) {
+            console.error("Failed to fetch statistics data:", e);
+            setError("Failed to load statistics data.");
+            setStatsData(initialStatsData);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userId]);
 
     useEffect(() => {
-        setCurrentTrend(trendData[activeFilter]);
-        setCurrentStats(statsData[activeFilter]);
-    }, [activeFilter]);
+        fetchData(activeFilter);
+    }, [activeFilter, fetchData]);
 
-    const dailyGasData: Record<string, number> = {
-        '2025-10-01': 25, '2025-10-02': 35, '2025-10-03': 42, '2025-10-04': 38, '2025-10-05': 55,
-        '2025-10-06': 31, '2025-10-07': 33, '2025-10-08': 41, '2025-10-09': 28, '2025-10-10': 60,
-        '2025-10-11': 45, '2025-10-12': 29, '2025-10-13': 48, '2025-10-14': 22, '2025-10-15': 51,
-        '2025-10-16': 49, '2025-10-17': 36, '2025-10-18': 58, '2025-10-19': 40, '2025-10-20': 34,
-        '2025-10-25': 5, '2025-10-26': 5,
-      };
-
-      const getDayStatus = (date: Date) => {
+    // Helper function to get the status of a day for the calendar view
+    const getDayStatus = (date: Date) => {
         const dateString = format(date, 'yyyy-MM-dd');
-        const level = dailyGasData[dateString];
+        const level = statsData.dailyGasData[dateString];
         if (level === undefined) return 'default';
         if (level > 50) return 'high';
         if (level > 30) return 'moderate';
         return 'safe';
-      };
+    };
+
+    // Calculate Monthly Summary based on fetched dailyGasData for the current month
+    const calculateMonthlySummary = () => {
+        let safeDays = 0;
+        let moderateDays = 0;
+        let highRiskDays = 0;
+
+        const startOfMonth = format(currentMonth, 'yyyy-MM');
+
+        for (const dateString in statsData.dailyGasData) {
+            if (dateString.startsWith(startOfMonth)) {
+                const level = statsData.dailyGasData[dateString];
+                if (level > 50) {
+                    highRiskDays++;
+                } else if (level > 30) {
+                    moderateDays++;
+                } else {
+                    safeDays++;
+                }
+            }
+        }
+        return { safeDays, moderateDays, highRiskDays };
+    };
+
+    const monthlySummary = calculateMonthlySummary();
+
+    if (isLoading) {
+        // Simple loading state
+        return (
+            <div className="p-4 text-center">
+                <p>Loading statistics...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4 text-center text-red-500">
+                <p>{error}</p>
+            </div>
+        );
+    }
 
       const DayWithStatus = ({ date, ...props }: { date: Date } & React.HTMLAttributes<HTMLDivElement>) => {
         const status = getDayStatus(date);
@@ -262,7 +282,7 @@ export default function StatisticsPage() {
                 <CardContent className="p-4">
                     <div className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={currentTrend} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <LineChart data={statsData.trendData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
@@ -299,37 +319,37 @@ export default function StatisticsPage() {
               <SmallStatCard
                 icon={BarChartHorizontal}
                 title="Average Level"
-                value={currentStats.average.value}
-                unit={currentStats.average.unit}
-                change={currentStats.average.change}
-                changeType={currentStats.average.type as 'increase' | 'decrease'}
+                value={statsData.summaryStats.average.value}
+                unit={statsData.summaryStats.average.unit}
+                change={statsData.summaryStats.average.change}
+                changeType={statsData.summaryStats.average.type as 'increase' | 'decrease'}
                 iconBg="bg-blue-100 dark:bg-blue-900/50"
               />
               <SmallStatCard
                 icon={TrendingUp}
                 title="Peak Reading"
-                value={currentStats.peak.value}
-                unit={currentStats.peak.unit}
-                change={currentStats.peak.change}
-                changeType={currentStats.peak.type as 'increase' | 'decrease'}
+                value={statsData.summaryStats.peak.value}
+                unit={statsData.summaryStats.peak.unit}
+                change={statsData.summaryStats.peak.change}
+                changeType={statsData.summaryStats.peak.type as 'increase' | 'decrease'}
                 iconBg="bg-orange-100 dark:bg-orange-900/50"
               />
               <SmallStatCard
                 icon={ShieldCheck}
                 title="Safe Hours"
-                value={currentStats.safe.value}
-                unit={currentStats.safe.unit}
-                change={currentStats.safe.change}
-                changeType={currentStats.safe.type as 'increase' | 'decrease'}
+                value={statsData.summaryStats.safe.value}
+                unit={statsData.summaryStats.safe.unit}
+                change={statsData.summaryStats.safe.change}
+                changeType={statsData.summaryStats.safe.type as 'increase' | 'decrease'}
                 iconBg="bg-green-100 dark:bg-green-900/50"
               />
               <SmallStatCard
                 icon={AlertTriangle}
                 title="Alerts"
-                value={currentStats.alerts.value}
-                unit={currentStats.alerts.unit}
-                change={currentStats.alerts.change}
-                changeType={currentStats.alerts.type as 'increase' | 'decrease'}
+                value={statsData.summaryStats.alerts.value}
+                unit={statsData.summaryStats.alerts.unit}
+                change={statsData.summaryStats.alerts.change}
+                changeType={statsData.summaryStats.alerts.type as 'increase' | 'decrease'}
                 iconBg="bg-yellow-100 dark:bg-yellow-900/50"
               />
             </div>
@@ -337,10 +357,11 @@ export default function StatisticsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Device Comparison</CardTitle>
+                    <CardDescription>Average gas level comparison across devices in the current period.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4">
-                    <ChartContainer config={deviceComparisonConfig} className="h-[200px] w-full">
-                        <BarChart data={deviceComparisonData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                    <ChartContainer config={baseDeviceComparisonConfig} className="h-[200px] w-full">
+                        <BarChart data={statsData.deviceComparisonData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                             <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
@@ -353,29 +374,19 @@ export default function StatisticsPage() {
                                 cursor={{fill: 'hsl(var(--muted))', radius: 'var(--radius)'}}
                             />
                             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                {deviceComparisonData.map((entry) => (
-                                    <Cell key={`cell-${entry.name}`} fill={deviceComparisonConfig[entry.name as keyof typeof deviceComparisonConfig].color} />
+                                {statsData.deviceComparisonData.map((entry, index) => (
+                                    <Cell key={`cell-${entry.name}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                 ))}
                             </Bar>
                         </BarChart>
                     </ChartContainer>
                     <div className="flex justify-center items-center flex-wrap gap-4 mt-4 text-xs">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.Kitchen.color}}></span>
-                            <span>Kitchen Sensor (42.5 ppm)</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig['Living Room'].color}}></span>
-                            <span>Living Room (38.2 ppm)</span>
-                        </div>
-                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.Basement.color}}></span>
-                            <span>Basement (68.3 ppm)</span>
-                        </div>
-                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: deviceComparisonConfig.Garage.color}}></span>
-                            <span>Garage (52.7 ppm)</span>
-                        </div>
+                        {statsData.deviceComparisonData.map((entry, index) => (
+                            <div key={entry.name} className="flex items-center gap-2 text-muted-foreground">
+                                <span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: CHART_COLORS[index % CHART_COLORS.length]}}></span>
+                                <span>{entry.name} ({entry.value} ppm)</span>
+                            </div>
+                        ))}
                     </div>
                 </CardContent>
             </Card>
@@ -434,7 +445,7 @@ export default function StatisticsPage() {
                         icon={Shield}
                         iconColor="text-green-500"
                         title="Safe Days"
-                        value="18"
+                        value={monthlySummary.safeDays.toString()}
                         subtitle="Safe Days"
                         cardClass="bg-green-500/10 border-green-500/20"
                     />
@@ -442,7 +453,7 @@ export default function StatisticsPage() {
                         icon={ShieldAlert}
                         iconColor="text-yellow-500"
                         title="Warning Days"
-                        value="8"
+                        value={monthlySummary.moderateDays.toString()}
                         subtitle="Warning Days"
                         cardClass="bg-yellow-500/10 border-yellow-500/20"
                     />
@@ -450,7 +461,7 @@ export default function StatisticsPage() {
                         icon={AlertTriangle}
                         iconColor="text-red-500"
                         title="High Risk Days"
-                        value="4"
+                        value={monthlySummary.highRiskDays.toString()}
                         subtitle="High Risk Days"
                         cardClass="bg-red-500/10 border-red-500/20"
                     />

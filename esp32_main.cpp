@@ -12,14 +12,15 @@ Preferences preferences;
 const byte DNS_PORT = 53;
 
 // ==================== CONFIGURATION ====================
-const char* SUPABASE_URL = "https://your-project-ref.supabase.co";
-const char* SUPABASE_ANON_KEY = "YOUR_ANON_PUBLIC_KEY";
+const char* SUPABASE_URL = "https://ozuwljacxkckqlpngvye.supabase.co";
+const char* SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96dXdsamFjeGtja3FscG5ndnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNTc5NDksImV4cCI6MjA3NTkzMzk0OX0.5M0y156AEE_YWcH5-UG4XEwP9BgzTHgpEo6bjQws8lI";
 const char* ALERTS_TABLE_ENDPOINT = "/rest/v1/alerts";
 const char* DEVICE_READINGS_TABLE_ENDPOINT = "/rest/v1/device_readings";
 const char* DEVICES_TABLE_ENDPOINT = "/rest/v1/devices";
 
 // Device info
 String deviceId;
+String userId; // Declare userId globally
 bool setupMode = true;
 bool wifiConnected = false;
 
@@ -82,6 +83,7 @@ void handleConnectForm();
 void handleCaptivePortal();
 void handleChromeIntent();
 void handleRoot(); // Added missing declaration
+String getUserId(); // Declare getUserId function
 
 // ==================== SETUP FUNCTION ====================
 void setup() {
@@ -99,8 +101,10 @@ void setup() {
   
   // Get or generate device ID
   deviceId = getDeviceId();
+  userId = getUserId(); // Load userId on startup
   Serial.println("🚀 SmartGas Detector Starting...");
   Serial.println("Device ID: " + deviceId);
+  Serial.println("User ID: " + userId);
   
   blinkStartupSequence();
   
@@ -234,6 +238,9 @@ bool registerDevice() {
 bool sendDeviceReading(float temperature, float humidity, float pressure, float gas_level) {
   String payload = "{";
   payload += "\"device_id\":\"" + deviceId + "\",";
+  if (userId.length() > 0) { // Only add userId if it's available
+    payload += "\"user_id\":\"" + userId + "\",";
+  }
   payload += "\"temperature\":" + String(temperature) + ",";
   payload += "\"humidity\":" + String(humidity) + ",";
   payload += "\"pressure\":" + String(pressure) + ",";
@@ -432,14 +439,22 @@ void handleConnectForm() {
   String password = server.arg("password");
   String email = server.arg("email");
   String mobile = server.arg("mobile");
+  String newUserId = server.arg("userid"); // Get userID from form
 
   if (ssid.length() > 0 && password.length() > 0) {
+    // Store WiFi credentials in "wifi-config"
     preferences.begin("wifi-config", false);
     preferences.putString("ssid", ssid);
     preferences.putString("password", password);
     preferences.putString("email", email);
     preferences.putString("mobile", mobile);
     preferences.end();
+
+    // Store userId in "device-config"
+    preferences.begin("device-config", false);
+    preferences.putString("user_id", newUserId); // Store newUserId
+    preferences.end();
+    userId = newUserId; // Update global userId
 
     String html = R"rawliteral(
     <!doctype html>
@@ -869,6 +884,21 @@ void serialEvent() {
   }
 }
 
+// ==================== USER ID FUNCTIONS ====================
+String getUserId() {
+  preferences.begin("device-config", false);
+  String storedUserId = preferences.getString("user_id", "");
+  preferences.end();
+
+  if (storedUserId == "") {
+    Serial.println("No User ID stored.");
+    return "";
+  } else {
+    Serial.println("Using stored User ID: " + storedUserId);
+    return storedUserId;
+  }
+}
+
 // ==================== CAPTIVE PORTAL HTML ====================
 String captivePortalPage() {
   return R"rawliteral(
@@ -992,6 +1022,9 @@ String captivePortalPage() {
         <label for="mobile">Mobile Number (optional)</label>
         <input id="mobile" name="mobile" placeholder="+1234567890">
         
+        <label for="userid">User ID (required)</label>
+        <input id="userid" name="userid" placeholder="Enter your User ID" required>
+
         <button type="submit">🔗 Connect Device</button>
       </form>
     </div>

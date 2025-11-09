@@ -2,10 +2,10 @@
 
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GasLevelKnob } from '@/components/gas-level-knob';
+import { GasLevelDisplayCard } from '@/components/gas-level-display-card';
 import { DeviceCard } from '@/components/device-card';
 import { DashboardHeader } from '@/components/dashboard-header';
-import type { Alert, Device } from '@/lib/types';
+import type { Alert, Device, DeviceReading } from '@/lib/types';
 import { AddDeviceDialog } from '@/components/add-device-dialog';
 import Link from 'next/link';
 import { Header } from '@/components/header';
@@ -14,7 +14,8 @@ import { useUser } from '@/supabase/auth';
 import { supabase } from '@/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 function DashboardLoading() {
   return (
@@ -73,6 +74,7 @@ function DashboardLoading() {
 
 export default function Dashboard() {
   const { user, isLoading: isUserLoading } = useUser();
+  const { toast } = useToast();
 
   const devicesRef = useMemo(() => {
     if (isUserLoading || !user?.id) {
@@ -91,11 +93,26 @@ export default function Dashboard() {
     }
     return {
       from: 'alerts',
-      params: { user_id: user.id },
+      params: {},
     };
   }, [user?.id, isUserLoading]);
 
   const { data: allAlerts, isLoading: alertsLoading, error: alertsError } = useCollection<Alert>(alertsRef);
+
+  const latestReadingRef = useMemo(() => {
+    if (isUserLoading || !user?.id) {
+      return null;
+    }
+    return {
+      from: 'device_readings',
+      orderBy: { column: 'created_at', ascending: false },
+      limit: 1,
+      pollingInterval: 5000, // Poll every 5 seconds for real-time feel
+    };
+  }, [user?.id, isUserLoading]);
+
+  const { data: latestReadingArray, isLoading: latestReadingLoading } = useCollection<DeviceReading>(latestReadingRef);
+  const latestReading = latestReadingArray?.[0] ?? null;
   
   if (devicesError) {
     console.error("Dashboard: Devices loading error:", devicesError);
@@ -105,7 +122,38 @@ export default function Dashboard() {
     console.error("Dashboard: Alerts loading error:", alertsError);
   }
 
-  if (devicesLoading || alertsLoading || isUserLoading) {
+  let gasPercentage = 0;
+  const MAX_GAS_LEVEL = 4095; // Define MAX_GAS_LEVEL here for calculation (based on 12-bit ADC max value)
+
+  if (latestReading) {
+    try {
+      if (typeof latestReading.gas_percentage === 'number') {
+        gasPercentage = latestReading.gas_percentage;
+      } else if (typeof latestReading.gas_level === 'number') {
+        gasPercentage = Math.min((latestReading.gas_level / MAX_GAS_LEVEL) * 100, 100);
+      }
+    } catch (e) {
+      console.error("Dashboard: Error accessing latestReading:", e);
+    }
+  }
+  const lastUpdated = latestReading?.createdAt;
+
+  console.log("Dashboard: Calculated gasPercentage:", gasPercentage);
+  console.log("Dashboard: lastUpdated:", lastUpdated);
+
+  useEffect(() => {
+    // Trigger alert/toaster when gas percentage is between 50% and 100%
+    if (gasPercentage >= 50) {
+      toast({
+        title: "⚠️ High Gas Level Warning",
+        description: `Gas level is at ${Math.round(gasPercentage)}%. Immediate attention required.`,
+        variant: gasPercentage >= 75 ? "destructive" : "default",
+        duration: 120000, // 2 minutes
+      });
+    }
+  }, [gasPercentage, toast]);
+
+  if (devicesLoading || alertsLoading || isUserLoading || latestReadingLoading) {
     return <DashboardLoading />;
   }
 
@@ -117,16 +165,6 @@ export default function Dashboard() {
   }
 
   const latestAlert = getLatestAlert();
-  let gasLevel = 0;
-  if (latestAlert && latestAlert.sensorData) {
-    try {
-      const sensorData = latestAlert.sensorData;
-      gasLevel = sensorData.gas_value ?? 0;
-    } catch (e) {
-      console.error("Dashboard: Error accessing sensorData:", e);
-    }
-  }
-  const lastUpdated = latestAlert?.createdAt;
 
   const getLatestAlertForDevice = (deviceId: string): Alert | undefined => {
     if (!allAlerts) return undefined;
@@ -140,7 +178,7 @@ export default function Dashboard() {
         <Header />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8">
             <DashboardHeader />
-            <GasLevelKnob gasLevel={gasLevel} lastUpdated={lastUpdated} />
+            <GasLevelDisplayCard gasPercentage={gasPercentage} lastUpdated={lastUpdated} />
 
             <div className="space-y-4">
             <div className="flex items-center justify-between">
