@@ -17,10 +17,15 @@ export interface UseCollectionResult<T> {
 }
 
 /**
- * React hook to subscribe to a Supabase table in real-time.
+ * React hook to subscribe to a Supabase table in real-time or via polling.
  *
  * @template T Optional type for row data. Defaults to any.
- * @param {string | null | undefined} tableName - The Supabase table name. Waits if null/undefined.
+ * @param {object | null | undefined} queryConfig - The configuration for the query.
+ * @param {string} queryConfig.from - The Supabase table name.
+ * @param {Record<string, any>} [queryConfig.params] - Key-value pairs for .eq() filters.
+ * @param {{ column: string; ascending?: boolean }} [queryConfig.orderBy] - Column to order by.
+ * @param {number} [queryConfig.limit] - Max number of rows to return.
+ * @param {number} [queryConfig.pollingInterval] - Interval in ms to re-fetch data. If set, realtime subscription is disabled.
  * @param {string} [schema='public'] - The database schema.
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
@@ -39,13 +44,22 @@ export function useCollection<T = any>(
     tableName: string,
     params: Record<string, any> | undefined,
     orderBy: { column: string; ascending?: boolean } | undefined,
-    limit: number | undefined,
-    schema: string
+    limit: number | undefined
   ) => {
+    // Keep it loading if it's not the initial fetch in polling mode
+    if (!queryConfig?.pollingInterval) {
+        setIsLoading(true);
+    }
     try {
       console.log(`useCollection: Fetching from table: ${tableName} with params:`, params);
-      let query = supabase.from(tableName).select('*');
+      let query = supabase.from(tableName).select('*', { schema });
 
+      if (params) {
+        Object.keys(params).forEach((key) => {
+          query = query.eq(key, params[key]);
+        });
+      }
+      
       if (orderBy) {
         query = query.order(orderBy.column, { ascending: orderBy.ascending ?? false });
       }
@@ -54,11 +68,6 @@ export function useCollection<T = any>(
         query = query.limit(limit);
       }
 
-      if (params) {
-        Object.keys(params).forEach((key) => {
-          query = query.eq(key, params[key]);
-        });
-      }
 
       const { data: rows, error: fetchError } = await query;
 
@@ -73,12 +82,13 @@ export function useCollection<T = any>(
       setData(results);
       setError(null);
     } catch (err: any) {
+      console.error(`useCollection error fetching ${tableName}:`, err);
       setError(err);
       setData(null);
     } finally {
       setIsLoading(false);
     }
-  }, [setData, setError, setIsLoading, schema]);
+  }, [schema, queryConfig?.pollingInterval]);
 
   useEffect(() => {
     if (!queryConfig?.from) {
@@ -90,43 +100,44 @@ export function useCollection<T = any>(
 
     const { from: tableName, params, orderBy, limit, pollingInterval } = queryConfig;
 
-    setIsLoading(true);
-    setError(null);
-
     // Initial fetch
-    fetchData(tableName, params, orderBy, limit, schema);
+    fetchData(tableName, params, orderBy, limit);
 
-    let channel: { unsubscribe: () => void } | null = null;
-    if (!pollingInterval) {
+    const isPolling = pollingInterval && pollingInterval > 0;
+    let channel: any;
+    let intervalId: NodeJS.Timeout | null = null;
+
+    if (isPolling) {
+      intervalId = setInterval(() => {
+        fetchData(tableName, params, orderBy, limit);
+      }, pollingInterval);
+    } else {
       // Only subscribe to real-time changes if polling is not enabled
+      const filterString = params 
+        ? Object.keys(params).map(key => `${key}=eq.${params[key]}`).join('&')
+        : 'id=neq.0'; // A non-empty filter that is always true
+        
       channel = supabase
-        .channel(`public:${tableName}`)
+        .channel(`public:${tableName}:${filterString}`)
         .on(
           'postgres_changes',
-          { event: '*', schema, table: tableName },
-          (payload) => {
-            fetchData(tableName, params, orderBy, limit, schema);
+          { event: '*', schema, table: tableName, filter: filterString },
+          () => {
+            fetchData(tableName, params, orderBy, limit);
           }
         )
         .subscribe();
     }
 
-    let intervalId: NodeJS.Timeout | null = null;
-    if (pollingInterval && pollingInterval > 0) {
-      intervalId = setInterval(() => {
-        fetchData(tableName, params, orderBy, limit, schema);
-      }, pollingInterval);
-    }
-
     return () => {
       if (channel) {
-        channel.unsubscribe();
+        supabase.removeChannel(channel);
       }
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [queryConfig, schema, fetchData]);
+  }, [JSON.stringify(queryConfig), schema, fetchData]);
 
   return { data, isLoading, error };
 }

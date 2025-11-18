@@ -1,5 +1,3 @@
-'use server';
-
 import { predictFutureAlerts } from '@/ai/flows/predictive-maintenance-alerts';
 import { collection, getDocs, query, where, getDoc, doc, collectionGroup, Timestamp } from 'firebase/firestore';
 import { getSdks } from '@/firebase';

@@ -48,7 +48,11 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
     if (isUserLoading || !device?.id) {
       return null;
     }
-    return { from: 'alerts', params: { device_id: device.id } };
+    return {
+      from: 'alerts',
+      params: { device_id: device.id },
+      pollingInterval: 5000,
+    };
   }, [isUserLoading, device?.id, user?.id]);
 
   const { data: alerts, isLoading: isAlertsLoading } = useCollection<Alert>(alertsQueryConfig);
@@ -58,7 +62,11 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
     if (isUserLoading || !device?.id) {
       return null;
     }
-    return { from: 'device_readings', params: { device_id: device.id } };
+    return {
+      from: 'device_readings',
+      params: { device_id: device.id },
+      pollingInterval: 5000,
+    };
   }, [isUserLoading, device?.id, user?.id]);
 
   const { data: readings, isLoading: isReadingsLoading } = useCollection<DeviceReading>(historicalReadingsQueryConfig);
