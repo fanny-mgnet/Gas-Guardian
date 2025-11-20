@@ -21,7 +21,6 @@ import {
     TableRow,
   } from '@/components/ui/table';
 import { GasLevelChart } from '@/components/charts';
-import { PredictiveMaintenance } from '@/components/predictive-maintenance';
 import { GasLevelDisplayCard } from '@/components/gas-level-display-card';
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -284,7 +283,6 @@ export default function DeviceDetailPage({ params }: { params: { id: string } })
                     </CardContent>
                 </Card>
             )}
-            <PredictiveMaintenance deviceId={device.id} />
         </div>
     </div>
   );
