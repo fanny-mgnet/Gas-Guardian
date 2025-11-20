@@ -1,0 +1,48 @@
+import { StatisticsData } from './types';
+
+export const staticStatisticsData: StatisticsData = {
+  trendData: [
+    { time: '12am', value: 25 },
+    { time: '3am', value: 30 },
+    { time: '6am', value: 28 },
+    { time: '9am', value: 35 },
+    { time: '12pm', value: 45 },
+    { time: '3pm', value: 40 },
+    { time: '6pm', value: 38 },
+    { time: '9pm', value: 32 },
+  ],
+  summaryStats: {
+    average: { value: '35.4', unit: 'ppm', change: '+2.5%', type: 'increase' },
+    peak: { value: '68.1', unit: 'ppm', change: '-5.2%', type: 'decrease' },
+    safe: { value: '18.2', unit: 'hrs', change: '+10.0%', type: 'decrease' },
+    alerts: { value: '3', unit: 'times', change: '+50.0%', type: 'increase' },
+  },
+  deviceComparisonData: [
+    { name: 'Living Room', value: 42 },
+    { name: 'Kitchen', value: 55 },
+    { name: 'Bedroom', value: 30 },
+    { name: 'Basement', value: 25 },
+  ],
+  dailyGasData: {
+    '2025-11-01': 28,
+    '2025-11-02': 35,
+    '2025-11-03': 45,
+    '2025-11-04': 32,
+    '2025-11-05': 60,
+    '2025-11-06': 52,
+    '2025-11-07': 48,
+    '2025-11-08': 30,
+    '2025-11-09': 25,
+    '2025-11-10': 38,
+    '2025-11-11': 41,
+    '2025-11-12': 55,
+    '2025-11-13': 29,
+    '2025-11-14': 33,
+    '2025-11-15': 43,
+    '2025-11-16': 22,
+    '2025-11-17': 26,
+    '2025-11-18': 36,
+    '2025-11-19': 49,
+    '2025-11-20': 58,
+  },
+};

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft,
   Share2,
@@ -20,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -37,22 +37,8 @@ import Link from 'next/link';
 import { Calendar } from '@/components/ui/calendar';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
-import { getStatisticsData } from '@/lib/actions';
-import { FilterType, StatisticsData, SummaryStats, TrendDataPoint, DeviceComparisonDataPoint, DailyGasData } from '@/lib/types';
-// import { useDoc } from '@/supabase/use-doc'; // Temporarily removed to fix compilation
-
-// Define initial empty state for StatisticsData
-const initialStatsData: StatisticsData = {
-    trendData: [],
-    summaryStats: {
-        average: { value: '0.0', unit: 'ppm', change: '0%', type: 'neutral' },
-        peak: { value: '0.0', unit: 'ppm', change: '0%', type: 'neutral' },
-        safe: { value: '0.0', unit: 'hrs', change: '0%', type: 'neutral' },
-        alerts: { value: '0', unit: 'times', change: '0%', type: 'neutral' },
-    },
-    deviceComparisonData: [],
-    dailyGasData: {},
-};
+import { StatisticsData, FilterType } from '@/lib/types';
+import { staticStatisticsData } from '@/lib/statistics-data';
 
 const CHART_COLORS = [
     "hsl(var(--chart-1))",
@@ -135,34 +121,17 @@ function MonthlySummaryCard({ icon: Icon, iconColor, title, value, subtitle, car
 }
 
 export default function StatisticsPage() {
-    // NOTE: Using a placeholder for userId to isolate the server action error.
-    const userId = 'placeholder-user-id';
-
+    const statsData = staticStatisticsData;
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [activeFilter, setActiveFilter] = useState<FilterType>('week');
-    const [statsData, setStatsData] = useState<StatisticsData>(initialStatsData);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    const fetchData = useCallback(async (filter: FilterType) => {
-        if (!userId) return;
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await getStatisticsData(filter, userId);
-            setStatsData(data);
-        } catch (e) {
-            console.error("Failed to fetch statistics data:", e);
-            setError("Failed to load statistics data.");
-            setStatsData(initialStatsData);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [userId]);
-
-    useEffect(() => {
-        fetchData(activeFilter);
-    }, [activeFilter, fetchData]);
+    if (!statsData) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <p>No statistics data available.</p>
+            </div>
+        );
+    }
 
     // Helper function to get the status of a day for the calendar view
     const getDayStatus = (date: Date) => {
@@ -199,41 +168,24 @@ export default function StatisticsPage() {
 
     const monthlySummary = calculateMonthlySummary();
 
-    if (isLoading) {
-        // Simple loading state
-        return (
-            <div className="p-4 text-center">
-                <p>Loading statistics...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-4 text-center text-red-500">
-                <p>{error}</p>
-            </div>
-        );
-    }
-
-      const DayWithStatus = ({ date, ...props }: { date: Date } & React.HTMLAttributes<HTMLDivElement>) => {
+    const DayWithStatus = ({ date, ...props }: { date: Date } & React.HTMLAttributes<HTMLDivElement>) => {
         const status = getDayStatus(date);
         const baseClasses = "w-9 h-9 flex items-center justify-center rounded-full";
         const statusClasses = {
-          safe: 'bg-green-100 text-green-800',
-          moderate: 'bg-orange-100 text-orange-800',
-          high: 'bg-red-100 text-red-800',
-          default: ''
+            safe: 'bg-green-100 text-green-800',
+            moderate: 'bg-orange-100 text-orange-800',
+            high: 'bg-red-100 text-red-800',
+            default: ''
         };
-      
+        
         return (
-          <div {...props}>
-            <div className={cn(baseClasses, statusClasses[status])}>
-              {format(date, 'd')}
+            <div {...props}>
+                <div className={cn(baseClasses, statusClasses[status])}>
+                    {format(date, 'd')}
+                </div>
             </div>
-          </div>
         );
-      };
+    };
 
   return (
     <div className="bg-background min-h-screen pb-24">
